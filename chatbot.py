@@ -907,4 +907,93 @@ class ChatService:
                 """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
-                "
+                "role": "assistant",
+                "content": resposta
+            })
+            
+            st.markdown("""
+            <script>
+                window.scrollTo(0, document.body.scrollHeight);
+            </script>
+            """, unsafe_allow_html=True)
+
+# ======================
+# APLICAÇÃO PRINCIPAL
+# ======================
+def main():
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+            border-right: 1px solid #ff66b3 !important;
+        }
+        .stButton button {
+            background: rgba(255, 20, 147, 0.2) !important;
+            color: white !important;
+            border: 1px solid #ff66b3 !important;
+            transition: all 0.3s !important;
+        }
+        .stButton button:hover {
+            background: rgba(255, 20, 147, 0.4) !important;
+            transform: translateY(-2px) !important;
+        }
+        [data-testid="stChatInput"] {
+            background: rgba(255, 102, 179, 0.1) !important;
+            border: 1px solid #ff66b3 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.title("💋 Paloma - Conteúdo Exclusivo")
+    conn = DatabaseService.init_db()
+    
+    ChatService.initialize_session()
+    if not st.session_state.age_verified:
+        UiService.age_verification()
+        st.stop()
+    
+    UiService.setup_sidebar()
+    
+    if not st.session_state.connection_complete:
+        UiService.show_call_effect()
+        st.session_state.connection_complete = True
+        st.rerun()
+    
+    if not st.session_state.chat_started:
+        col1, col2, col3 = st.columns([1,3,1])
+        with col2:
+            st.markdown("""
+            <div style="text-align: center; margin: 50px 0;">
+                <img src="https://i.imgur.com/XYZ1234.png" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
+                <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
+                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
+                st.session_state.update({
+                    "chat_started": True,
+                    "current_page": "chat",
+                    "audio_sent": False
+                })
+                st.rerun()
+        st.stop()
+    
+    if st.session_state.current_page == "home":
+        NewPages.show_home_page()
+    elif st.session_state.current_page == "gallery":
+        UiService.show_gallery_page(conn)
+    elif st.session_state.current_page == "offers":
+        NewPages.show_offers_page()
+    elif st.session_state.get("show_vip_offer", False):
+        st.warning("Página VIP em desenvolvimento")
+        if st.button("← Voltar ao chat"):
+            st.session_state.show_vip_offer = False
+            st.rerun()
+    else:
+        UiService.enhanced_chat_ui(conn)
+    
+    conn.close()
+
+if __name__ == "__main__":
+    main()
