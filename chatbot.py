@@ -13,19 +13,21 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES (CONFIGURAÇÕES ORIGINAIS PRESERVADAS)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Mantida conforme solicitado
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"
+    
+    # Configuração do áudio (modifique para sua URL do GitHub)
+    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"  # URL raw do GitHub
     AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
-# MODELO PERSONA (ORIGINAL)
+# MODELOS DE DADOS (mantido original)
 # ======================
 class Persona:
     PALOMA = """
@@ -49,7 +51,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS (mantido original)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -76,7 +78,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API (mantido original)
 # ======================
 class ApiService:
     @staticmethod
@@ -120,12 +122,206 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# SERVIÇOS DE UI (ATUALIZADO COM TODOS OS EFEITOS)
+# NOVAS PÁGINAS ADICIONADAS (mantido original)
+# ======================
+class NewPages:
+    @staticmethod
+    def show_home_page():
+        st.markdown("""
+        <style>
+            .hero-banner {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                padding: 80px 20px;
+                text-align: center;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 30px;
+                border: 2px solid #ff66b3;
+            }
+            .preview-img {
+                border-radius: 10px;
+                filter: blur(3px) brightness(0.7);
+                transition: all 0.3s;
+            }
+            .preview-img:hover {
+                filter: blur(0) brightness(1);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Banner principal
+        st.markdown("""
+        <div class="hero-banner">
+            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
+            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
+            <div style="margin-top: 20px;">
+                <a href="#vip" style="
+                    background: #ff66b3;
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 30px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                ">Quero Acessar Tudo</a>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Mini-galeria
+        st.subheader("🔍 Prévia do Conteúdo VIP")
+        cols = st.columns(3)
+        preview_images = [
+            "https://i.imgur.com/placeholder1.jpg",
+            "https://i.imgur.com/placeholder2.jpg",
+            "https://i.imgur.com/placeholder3.jpg"
+        ]
+        
+        for col, img in zip(cols, preview_images):
+            with col:
+                st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
+
+        # Chamada para ação
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="text-align: center;">
+            <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
+            <a href="{Config.VIP_LINK}" style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 12px 30px;
+                border-radius: 30px;
+                text-decoration: none;
+                font-weight: bold;
+                display: inline-block;
+                margin-top: 10px;
+            ">
+                Tornar-se VIP Agora
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+
+    @staticmethod
+    def show_offers_page():
+        st.title("🎁 Ofertas Especiais")
+        st.markdown("""
+        <style>
+            .offer-card {
+                border: 1px solid #ff66b3;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: rgba(30, 0, 51, 0.3);
+            }
+            .offer-highlight {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Timer de oferta (fake)
+        st.markdown("""
+        <div style="
+            background: linear-gradient(45deg, #ff0066, #ff66b3);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+        ">
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
+        </div>
+        
+        <script>
+            function updateTimer() {
+                let timer = document.getElementById('countdown').textContent.split(':');
+                let hours = parseInt(timer[0]);
+                let minutes = parseInt(timer[1]);
+                let seconds = parseInt(timer[2]);
+                
+                seconds--;
+                if (seconds < 0) { seconds = 59; minutes--; }
+                if (minutes < 0) { minutes = 59; hours--; }
+                
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                setTimeout(updateTimer, 1000);
+            }
+            updateTimer();
+        </script>
+        """, unsafe_allow_html=True)
+
+        # Planos VIP
+        plans = [
+            {
+                "name": "1 Mês",
+                "price": "R$ 29,90",
+                "original": "R$ 49,90",
+                "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
+                "tag": "COMUM"
+            },
+            {
+                "name": "3 Meses",
+                "price": "R$ 69,90",
+                "original": "R$ 149,70",
+                "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
+                "tag": "MAIS POPULAR"
+            },
+            {
+                "name": "1 Ano",
+                "price": "R$ 199,90",
+                "original": "R$ 598,80",
+                "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
+                "tag": "MELHOR CUSTO-BENEFÍCIO"
+            }
+        ]
+
+        for plan in plans:
+            with st.container():
+                st.markdown(f"""
+                <div class="offer-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>{plan['name']}</h3>
+                        {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
+                        <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
+                    </div>
+                    <ul style="padding-left: 20px;">
+                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
+                    </ul>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="{Config.VIP_LINK}?plan={plan['name'].replace(' ', '').lower()}" style="
+                            background: linear-gradient(45deg, #ff1493, #9400d3);
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 30px;
+                            text-decoration: none;
+                            display: inline-block;
+                            font-weight: bold;
+                        ">
+                            Assinar {plan['name']}
+                        </a>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+# ======================
+# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio)
 # ======================
 class UiService:
     @staticmethod
     def get_chat_audio_player():
-        """Player estilizado para o fluxo de mensagens"""
+        """Player de áudio estilizado para o fluxo de mensagens"""
         return f"""
         <div style="
             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -141,7 +337,7 @@ class UiService:
 
     @staticmethod
     def get_fixed_audio_player():
-        """Player fixo no topo do chat"""
+        """Player de áudio fixo no topo do chat"""
         return f"""
         <div style="
             margin-bottom: 20px;
@@ -172,8 +368,106 @@ class UiService:
         """
 
     @staticmethod
+    def show_call_effect():
+        LIGANDO_DELAY = 5
+        ATENDIDA_DELAY = 3
+
+        call_container = st.empty()
+
+        # Fase 1: Ligando
+        call_container.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #ff66b3;
+            text-align: center;
+            color: white;
+            animation: pulse-ring 2s infinite;
+        ">
+            <div style="font-size: 3rem;">📱</div>
+            <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
+                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
+                <span style="font-size: 0.9rem;">Online agora</span>
+            </div>
+        </div>
+        <style>
+            @keyframes pulse-ring {{
+                0% {{ transform: scale(0.95); opacity: 0.8; }}
+                50% {{ transform: scale(1.05); opacity: 1; }}
+                100% {{ transform: scale(0.95); opacity: 0.8; }}
+            }}
+        </style>
+        """, unsafe_allow_html=True)
+        
+        time.sleep(LIGANDO_DELAY)
+
+        # Fase 2: Atendida
+        call_container.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #4CAF50;
+            text-align: center;
+            color: white;
+        ">
+            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
+            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
+            <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        time.sleep(ATENDIDA_DELAY)
+        call_container.empty()
+
+    @staticmethod
+    def show_status_effect(container, status_type):
+        status_messages = {
+            "viewed": ["Visualizado", "Mensagem recebida", "Recebido"],
+            "typing": ["Digitando", "Respondendo", "Escrevendo"]
+        }
+        
+        message = random.choice(status_messages[status_type])
+        dots = ""
+        start_time = time.time()
+        duration = 2.5 if status_type == "viewed" else random.uniform(3, 7)
+        
+        while time.time() - start_time < duration:
+            elapsed = time.time() - start_time
+            
+            if status_type == "typing":
+                dots = "." * (int(elapsed * 2) % 4)
+            
+            container.markdown(f"""
+            <div style="
+                color: #888;
+                font-size: 0.8em;
+                padding: 2px 8px;
+                border-radius: 10px;
+                background: rgba(0,0,0,0.05);
+                display: inline-block;
+                margin-left: 10px;
+                vertical-align: middle;
+                font-style: italic;
+            ">
+                {message}{dots}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            time.sleep(0.3)
+        
+        container.empty()
+
+    @staticmethod
     def show_audio_recording_effect(container):
-        """Efeito 'Gravando um áudio...' com animação"""
         message = "Gravando um áudio"
         dots = ""
         start_time = time.time()
@@ -202,10 +496,290 @@ class UiService:
         
         container.empty()
 
-    # ... (Outros métodos mantidos iguais ao original: show_call_effect, show_status_effect, age_verification, etc.)
+    @staticmethod
+    def age_verification():
+        st.markdown("""
+        <style>
+            .age-verification {
+                max-width: 600px;
+                margin: 2rem auto;
+                padding: 2rem;
+                background: linear-gradient(145deg, #1e0033, #3c0066);
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 102, 179, 0.2);
+                color: white;
+            }
+            .age-header {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 1.5rem;
+            }
+            .age-icon {
+                font-size: 2.5rem;
+                color: #ff66b3;
+            }
+            .age-title {
+                font-size: 1.8rem;
+                font-weight: 700;
+                margin: 0;
+                color: #ff66b3;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        with st.container():
+            st.markdown("""
+            <div class="age-verification">
+                <div class="age-header">
+                    <div class="age-icon">🔞</div>
+                    <h1 class="age-title">Verificação de Idade</h1>
+                </div>
+                <div class="age-content">
+                    <p>Este site contém material explícito destinado exclusivamente a adultos maiores de 18 anos.</p>
+                    <p>Ao acessar este conteúdo, você declara estar em conformidade com todas as leis locais aplicáveis.</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button("✅ Confirmo que sou maior de 18 anos", 
+                        key="age_checkbox",
+                        use_container_width=True,
+                        type="primary"):
+                st.session_state.age_verified = True
+                st.rerun()
+
+    @staticmethod
+    def setup_sidebar():
+        with st.sidebar:
+            st.markdown("""
+            <style>
+                .sidebar-header {
+                    text-align: center; 
+                    margin-bottom: 20px;
+                }
+                .sidebar-header img {
+                    border-radius: 50%; 
+                    border: 2px solid #ff66b3;
+                    width: 80px;
+                    height: 80px;
+                    object-fit: cover;
+                }
+                .vip-badge {
+                    background: linear-gradient(45deg, #ff1493, #9400d3);
+                    padding: 15px;
+                    border-radius: 8px;
+                    color: white;
+                    text-align: center;
+                    margin: 10px 0;
+                }
+                .menu-item {
+                    transition: all 0.3s;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                .menu-item:hover {
+                    background: rgba(255, 102, 179, 0.2);
+                }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="sidebar-header">
+                <img src="https://i.imgur.com/XYZ1234.png" alt="Paloma">
+                <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("### 🌟 Menu Exclusivo")
+            
+            menu_options = {
+                "💋 Início": "home",
+                "📸 Galeria Privada": "gallery",
+                "💌 Mensagens": "messages",
+                "🎁 Ofertas Especiais": "offers"
+            }
+            
+            for option, page in menu_options.items():
+                if st.button(option, use_container_width=True, key=f"menu_{page}"):
+                    st.session_state.current_page = page
+                    st.rerun()
+            
+            st.markdown("---")
+            st.markdown("### 🔒 Sua Conta")
+            
+            status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
+            status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
+            
+            st.markdown(f"""
+            <div style="
+                background: rgba(255, 20, 147, 0.1); 
+                padding: 10px; 
+                border-radius: 8px;
+            ">
+                <p style="margin: 0; font-size: 0.9em;">
+                    Status: <span style="color: {status_color}">{status}</span>
+                </p>
+                <p style="margin: 5px 0 0; font-size: 0.8em;">
+                    Expira em: {random.randint(1,30)} dias
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("### 💎 Upgrade VIP")
+            st.markdown("""
+            <div class="vip-badge">
+                <p style="margin: 0 0 10px; font-weight: bold;">Acesso completo por apenas</p>
+                <p style="margin: 0; font-size: 1.5em; font-weight: bold;">R$ 29,90/mês</p>
+                <p style="margin: 10px 0 0; font-size: 0.8em;">Cancele quando quiser</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
+                st.session_state.show_vip_offer = True
+            
+            st.markdown("---")
+            st.markdown("""
+            <div style="text-align: center; font-size: 0.7em; color: #888;">
+                <p>© 2024 Paloma Premium</p>
+                <p>🔞 Conteúdo para maiores de 18 anos</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    @staticmethod
+    def show_gallery_page(conn):
+        st.title("📸 Galeria Privada")
+        st.markdown("""
+        <div style="
+            background: rgba(255, 20, 147, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        ">
+            <p style="margin: 0;">Conteúdo exclusivo para assinantes VIP</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        cols = st.columns(3)
+        gallery_images = [
+            "https://i.imgur.com/placeholder1.jpg",
+            "https://i.imgur.com/placeholder2.jpg",
+            "https://i.imgur.com/placeholder3.jpg"
+        ]
+        
+        for idx, col in enumerate(cols):
+            with col:
+                st.image(
+                    gallery_images[idx],
+                    use_column_width=True,
+                    caption=f"Preview {idx+1}"
+                )
+                st.markdown(f"""
+                <div style="
+                    text-align: center;
+                    font-size: 0.8em;
+                    color: #ff66b3;
+                    margin-top: -10px;
+                ">
+                    🔒 Conteúdo bloqueado
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="text-align: center;">
+            <h4>🔓 Desbloqueie acesso completo</h4>
+            <p>Assine o plano VIP para ver todos os conteúdos</p>
+            <a href="{Config.VIP_LINK}" style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                text-decoration: none;
+                display: inline-block;
+                margin-top: 10px;
+            ">
+                Tornar-se VIP
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("← Voltar ao chat", key="back_from_gallery"):
+            st.session_state.current_page = "chat"
+            st.rerun()
+
+    @staticmethod
+    def enhanced_chat_ui(conn):
+        st.markdown("""
+        <style>
+            .chat-header {
+                background: linear-gradient(90deg, #ff66b3, #ff1493);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            .audio-fixed-container {
+                margin-bottom: 20px;
+                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
+                padding-bottom: 20px;
+            }
+            .stAudio {
+                border-radius: 20px !important;
+                background: rgba(255, 102, 179, 0.1) !important;
+                padding: 10px !important;
+                margin: 10px 0 !important;
+            }
+            audio::-webkit-media-controls-panel {
+                background: linear-gradient(45deg, #ff66b3, #ff1493) !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown(f"""
+        <div class="chat-header">
+            <h2 style="margin:0; font-size:1.5em; display:inline-block;">💬 Chat Privado com Paloma</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.sidebar.markdown(f"""
+        <div style="
+            background: rgba(255, 20, 147, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        ">
+            <p style="margin:0; font-size:0.9em;">
+                Mensagens hoje: <strong>{st.session_state.request_count}/{Config.MAX_REQUESTS_PER_SESSION}</strong>
+            </p>
+            <progress value="{st.session_state.request_count}" max="{Config.MAX_REQUESTS_PER_SESSION}" style="width:100%; height:6px;"></progress>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        ChatService.process_user_input(conn)
+        
+        st.markdown("""
+        <div style="
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 0.8em;
+            color: #888;
+        ">
+            <p>🔒 Conversa privada • ✉️ Suas mensagens são confidenciais</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT (atualizado para áudio)
 # ======================
 class ChatService:
     @staticmethod
@@ -266,13 +840,18 @@ class ChatService:
                         """, unsafe_allow_html=True)
 
     @staticmethod
+    def validate_input(user_input):
+        cleaned_input = re.sub(r'<[^>]*>', '', user_input)
+        return cleaned_input[:500]
+
+    @staticmethod
     def process_user_input(conn):
         ChatService.display_chat_history()
         
-        # Envio do áudio inicial
+        # Envio do áudio inicial (apenas uma vez)
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
-            UiService.show_audio_recording_effect(status_container)  # 👈 EFEITO DE GRAVAÇÃO
+            UiService.show_audio_recording_effect(status_container)
             
             # Adiciona ao histórico como mensagem especial
             st.session_state.messages.append({
@@ -282,29 +861,50 @@ class ChatService:
             st.session_state.audio_sent = True
             st.rerun()
         
-        # Restante do método mantido igual ao original...
-        # ... (processamento de mensagens do usuário, etc.)
-
-# ======================
-# APLICAÇÃO PRINCIPAL (COM CSS ATUALIZADO)
-# ======================
-def main():
-    st.markdown("""
-    <style>
-        /* Estilos para os players de áudio */
-        audio {
-            border-radius: 20px !important;
-        }
-        audio::-webkit-media-controls-panel {
-            background: linear-gradient(45deg, #ff66b3, #ff1493) !important;
-        }
-        audio::-webkit-media-controls-play-button {
-            filter: brightness(0) invert(1) !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # ... (Restante do código main() mantido igual ao original)
-
-if __name__ == "__main__":
-    main()
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        
+        if user_input:
+            cleaned_input = ChatService.validate_input(user_input)
+            
+            if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                })
+                st.rerun()
+                return
+            
+            st.session_state.messages.append({
+                "role": "user",
+                "content": cleaned_input
+            })
+            st.session_state.request_count += 1
+            
+            with st.chat_message("user", avatar="🧑"):
+                st.markdown(f"""
+                <div style="
+                    background: rgba(0, 0, 0, 0.1);
+                    padding: 12px;
+                    border-radius: 18px 18px 0 18px;
+                    margin: 5px 0;
+                ">
+                    {cleaned_input}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with st.chat_message("assistant", avatar="💋"):
+                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                    color: white;
+                    padding: 12px;
+                    border-radius: 18px 18px 18px 0;
+                    margin: 5px 0;
+                ">
+                    {resposta} {random.choice(["💋", "🔥", "😈"])}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.session_state.messages.append({
+                "
