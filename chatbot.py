@@ -16,16 +16,17 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Mantida exatamente como original
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"
+    DRIVE_AUDIO_ID = "SEU_ID_DO_DRIVE_AQUI"  # 👈 SUBSTITUA POR SEU ID REAL
+    AUDIO_FILE = f"https://drive.google.com/uc?export=download&id={DRIVE_AUDIO_ID}"  # Nova URL
     AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
-# MODELOS DE DADOS (mantido original)
+# MODELOS DE DADOS (ORIGINAL PRESERVADO)
 # ======================
 class Persona:
     PALOMA = """
@@ -49,7 +50,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (mantido original)
+# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -76,7 +77,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API (mantido original)
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
@@ -120,206 +121,12 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# NOVAS PÁGINAS ADICIONADAS (mantido original)
-# ======================
-class NewPages:
-    @staticmethod
-    def show_home_page():
-        st.markdown("""
-        <style>
-            .hero-banner {
-                background: linear-gradient(135deg, #1e0033, #3c0066);
-                padding: 80px 20px;
-                text-align: center;
-                border-radius: 15px;
-                color: white;
-                margin-bottom: 30px;
-                border: 2px solid #ff66b3;
-            }
-            .preview-img {
-                border-radius: 10px;
-                filter: blur(3px) brightness(0.7);
-                transition: all 0.3s;
-            }
-            .preview-img:hover {
-                filter: blur(0) brightness(1);
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Banner principal
-        st.markdown("""
-        <div class="hero-banner">
-            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
-            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
-            <div style="margin-top: 20px;">
-                <a href="#vip" style="
-                    background: #ff66b3;
-                    color: white;
-                    padding: 10px 25px;
-                    border-radius: 30px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    display: inline-block;
-                ">Quero Acessar Tudo</a>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Mini-galeria
-        st.subheader("🔍 Prévia do Conteúdo VIP")
-        cols = st.columns(3)
-        preview_images = [
-            "https://i.imgur.com/placeholder1.jpg",
-            "https://i.imgur.com/placeholder2.jpg",
-            "https://i.imgur.com/placeholder3.jpg"
-        ]
-        
-        for col, img in zip(cols, preview_images):
-            with col:
-                st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
-                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
-
-        # Chamada para ação
-        st.markdown("---")
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
-            <a href="{Config.VIP_LINK}" style="
-                background: linear-gradient(45deg, #ff1493, #9400d3);
-                color: white;
-                padding: 12px 30px;
-                border-radius: 30px;
-                text-decoration: none;
-                font-weight: bold;
-                display: inline-block;
-                margin-top: 10px;
-            ">
-                Tornar-se VIP Agora
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-
-    @staticmethod
-    def show_offers_page():
-        st.title("🎁 Ofertas Especiais")
-        st.markdown("""
-        <style>
-            .offer-card {
-                border: 1px solid #ff66b3;
-                border-radius: 15px;
-                padding: 20px;
-                margin-bottom: 20px;
-                background: rgba(30, 0, 51, 0.3);
-            }
-            .offer-highlight {
-                background: linear-gradient(45deg, #ff0066, #ff66b3);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Timer de oferta (fake)
-        st.markdown("""
-        <div style="
-            background: linear-gradient(45deg, #ff0066, #ff66b3);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
-        ">
-            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
-            <p style="margin:5px 0 0;">Termina em breve!</p>
-        </div>
-        
-        <script>
-            function updateTimer() {
-                let timer = document.getElementById('countdown').textContent.split(':');
-                let hours = parseInt(timer[0]);
-                let minutes = parseInt(timer[1]);
-                let seconds = parseInt(timer[2]);
-                
-                seconds--;
-                if (seconds < 0) { seconds = 59; minutes--; }
-                if (minutes < 0) { minutes = 59; hours--; }
-                
-                document.getElementById('countdown').textContent = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                setTimeout(updateTimer, 1000);
-            }
-            updateTimer();
-        </script>
-        """, unsafe_allow_html=True)
-
-        # Planos VIP
-        plans = [
-            {
-                "name": "1 Mês",
-                "price": "R$ 29,90",
-                "original": "R$ 49,90",
-                "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
-                "tag": "COMUM"
-            },
-            {
-                "name": "3 Meses",
-                "price": "R$ 69,90",
-                "original": "R$ 149,70",
-                "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
-                "tag": "MAIS POPULAR"
-            },
-            {
-                "name": "1 Ano",
-                "price": "R$ 199,90",
-                "original": "R$ 598,80",
-                "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
-                "tag": "MELHOR CUSTO-BENEFÍCIO"
-            }
-        ]
-
-        for plan in plans:
-            with st.container():
-                st.markdown(f"""
-                <div class="offer-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3>{plan['name']}</h3>
-                        {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
-                    </div>
-                    <div style="margin: 10px 0;">
-                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
-                        <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
-                    </div>
-                    <ul style="padding-left: 20px;">
-                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
-                    </ul>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <a href="{Config.VIP_LINK}?plan={plan['name'].replace(' ', '').lower()}" style="
-                            background: linear-gradient(45deg, #ff1493, #9400d3);
-                            color: white;
-                            padding: 10px 20px;
-                            border-radius: 30px;
-                            text-decoration: none;
-                            display: inline-block;
-                            font-weight: bold;
-                        ">
-                            Assinar {plan['name']}
-                        </a>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-# ======================
-# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio no fluxo)
+# SERVIÇOS DE INTERFACE (ATUALIZADO PARA DRIVE)
 # ======================
 class UiService:
     @staticmethod
     def get_chat_audio_player():
-        """Player de áudio estilizado para o fluxo de mensagens"""
+        """Player otimizado para Google Drive"""
         return f"""
         <div style="
             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -328,7 +135,8 @@ class UiService:
             margin: 5px 0;
         ">
             <audio controls style="width:100%; height:40px;">
-                <source src="{Config.AUDIO_FILE}" type="audio/mp3">
+                <source src="{Config.AUDIO_FILE}" type="audio/mpeg">
+                Seu navegador não suporta áudio.
             </audio>
         </div>
         """
@@ -740,7 +548,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (atualizado para áudio no fluxo)
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -870,7 +678,27 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# VERIFICAÇÃO DE ÁUDIO (NOVO)
+# ======================
+def verify_audio_setup():
+    if Config.DRIVE_AUDIO_ID == "SEU_ID_DO_DRIVE_AQUI":
+        st.error("🚨 Configuração de áudio necessária!")
+        st.markdown("""
+        ### Como configurar:
+        1. **Envie** seu arquivo `.mp3` para o Google Drive  
+        2. **Compartilhe**:  
+           - Botão direito → "Compartilhar" → "Qualquer pessoa com o link"  
+        3. **Copie o ID** da URL:  
+           `https://drive.google.com/file/d/[ID_DO_ARQUIVO]/view`  
+        4. **Cole no código**:  
+           ```python
+           DRIVE_AUDIO_ID = "ID_DO_ARQUIVO"  # Linha 17
+           ```
+        """)
+        st.stop()
+
+# ======================
+# APLICAÇÃO PRINCIPAL (ATUALIZADA)
 # ======================
 def main():
     st.markdown("""
@@ -895,6 +723,8 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    verify_audio_setup()  # 👈 Verificação adicionada
     
     st.title("💋 Paloma - Conteúdo Exclusivo")
     conn = DatabaseService.init_db()
