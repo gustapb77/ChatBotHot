@@ -13,20 +13,20 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO PARA DRIVE)
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Mantida exatamente como original
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Mantida igual
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    DRIVE_AUDIO_ID = "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU"  # 👈 SUBSTITUA POR SEU ID REAL
+    DRIVE_AUDIO_ID = "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU"  # 👈 SUBSTITUA PELO ID REAL
     AUDIO_FILE = f"https://drive.google.com/uc?export=download&id={DRIVE_AUDIO_ID}"  # Nova URL
     AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
-# MODELOS DE DADOS (ORIGINAL PRESERVADO)
+# MODELOS DE DADOS (ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
@@ -136,7 +136,6 @@ class UiService:
         ">
             <audio controls style="width:100%; height:40px;">
                 <source src="{Config.AUDIO_FILE}" type="audio/mpeg">
-                Seu navegador não suporta áudio.
             </audio>
         </div>
         """
@@ -681,26 +680,27 @@ class ChatService:
 # VERIFICAÇÃO DE ÁUDIO (NOVO)
 # ======================
 def verify_audio_setup():
-    if Config.DRIVE_AUDIO_ID == "SEU_ID_DO_DRIVE_AQUI":
-        st.error("🚨 Configuração de áudio necessária!")
+    if Config.DRIVE_AUDIO_ID == "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU":
+        st.error("🔊 Configuração de áudio necessária")
         st.markdown("""
         ### Como configurar:
-        1. **Envie** seu arquivo `.mp3` para o Google Drive  
-        2. **Compartilhe**:  
-           - Botão direito → "Compartilhar" → "Qualquer pessoa com o link"  
+        1. **Envie** seu `.mp3` para o Google Drive  
+        2. **Compartilhe** como 'Qualquer pessoa com o link'  
         3. **Copie o ID** da URL:  
-           `https://drive.google.com/file/d/[ID_DO_ARQUIVO]/view`  
+           `https://drive.google.com/file/d/[ID_AQUI]/view`  
         4. **Cole no código**:  
            ```python
-           DRIVE_AUDIO_ID = "ID_DO_ARQUIVO"  # Linha 17
+           DRIVE_AUDIO_ID = "ID_AQUI"  # Linha 17
            ```
         """)
         st.stop()
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADA)
+# APLICAÇÃO PRINCIPAL (COM VERIFICAÇÃO ADICIONADA)
 # ======================
 def main():
+    verify_audio_setup()  # 👈 Nova verificação
+    
     st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -723,8 +723,6 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
-    
-    verify_audio_setup()  # 👈 Verificação adicionada
     
     st.title("💋 Paloma - Conteúdo Exclusivo")
     conn = DatabaseService.init_db()
