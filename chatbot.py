@@ -21,7 +21,7 @@ class Config:
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    DRIVE_AUDIO_ID = "SEU_ID_DO_DRIVE_AQUI"  # 👈 SUBSTITUA POR SEU ID REAL
+    DRIVE_AUDIO_ID = "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU"  # 👈 SUBSTITUA POR SEU ID REAL
     AUDIO_FILE = f"https://drive.google.com/uc?export=download&id={DRIVE_AUDIO_ID}"  # Nova URL
     AUDIO_DURATION = 7  # Segundos do áudio
 
