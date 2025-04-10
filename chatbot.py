@@ -8,7 +8,6 @@ import time
 import random
 import sqlite3
 import re
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -21,8 +20,13 @@ class Config:
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"  # URL do áudio
     AUDIO_DURATION = 7  # Segundos do áudio
+
+    @staticmethod
+    def get_audio_url():
+        base_url = "https://drive.google.com/uc?export=download"
+        file_id = "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU"  # Substitua pelo seu ID real
+        return f"{base_url}&id={file_id}&confirm=no_antivirus&t={int(time.time())}"
 
 # ======================
 # MODELOS DE DADOS
@@ -189,7 +193,7 @@ class UiService:
         status_messages = {
             "viewed": ["Visualizado", "Mensagem recebida", "Recebido"],
             "typing": ["Digitando", "Respondendo", "Escrevendo"],
-            "recording": ["Gravando um áudio", "Preparando mensagem vocal", "Criando áudio"]
+            "recording": ["Gravando um áudio", "Preparando mensagem vocal"]
         }
         
         message = random.choice(status_messages[status_type])
@@ -466,7 +470,14 @@ class UiService:
             }
             .audio-message audio {
                 width: 100%;
-                border-radius: 15px;
+                border-radius: 10px;
+            }
+            audio::-webkit-media-controls-panel {
+                background: linear-gradient(45deg, #ff66b3, #ff1493);
+            }
+            audio::-webkit-media-controls-play-button,
+            audio::-webkit-media-controls-mute-button {
+                filter: invert(1);
             }
         </style>
         """, unsafe_allow_html=True)
@@ -535,7 +546,7 @@ class ChatService:
                     st.markdown(f"""
                     <div class="audio-message">
                         <audio controls>
-                            <source src="{Config.AUDIO_FILE}" type="audio/mp3">
+                            <source src="{Config.get_audio_url()}" type="audio/mpeg">
                         </audio>
                     </div>
                     """, unsafe_allow_html=True)
