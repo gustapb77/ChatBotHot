@@ -8,6 +8,7 @@ import time
 import random
 import sqlite3
 import re
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -15,21 +16,18 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configuração do áudio (modifique para sua URL do GitHub)
+    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"  # URL raw do GitHub
     AUDIO_DURATION = 7  # Segundos do áudio
 
-    @staticmethod
-    def get_audio_url():
-        base_url = "https://drive.google.com/uc?export=download"
-        file_id = "14qLcdjor8-VXwncHgXqu_jSDe4BxRnxU"  # Substitua pelo seu ID real
-        return f"{base_url}&id={file_id}&confirm=no_antivirus&t={int(time.time())}"
-
 # ======================
-# MODELOS DE DADOS
+# MODELOS DE DADOS (mantido original)
 # ======================
 class Persona:
     PALOMA = """
@@ -53,7 +51,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (mantido original)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -80,7 +78,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (mantido original)
 # ======================
 class ApiService:
     @staticmethod
@@ -124,7 +122,201 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI)
+# NOVAS PÁGINAS ADICIONADAS (mantido original)
+# ======================
+class NewPages:
+    @staticmethod
+    def show_home_page():
+        st.markdown("""
+        <style>
+            .hero-banner {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                padding: 80px 20px;
+                text-align: center;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 30px;
+                border: 2px solid #ff66b3;
+            }
+            .preview-img {
+                border-radius: 10px;
+                filter: blur(3px) brightness(0.7);
+                transition: all 0.3s;
+            }
+            .preview-img:hover {
+                filter: blur(0) brightness(1);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Banner principal
+        st.markdown("""
+        <div class="hero-banner">
+            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
+            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
+            <div style="margin-top: 20px;">
+                <a href="#vip" style="
+                    background: #ff66b3;
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 30px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                ">Quero Acessar Tudo</a>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Mini-galeria
+        st.subheader("🔍 Prévia do Conteúdo VIP")
+        cols = st.columns(3)
+        preview_images = [
+            "https://i.imgur.com/placeholder1.jpg",
+            "https://i.imgur.com/placeholder2.jpg",
+            "https://i.imgur.com/placeholder3.jpg"
+        ]
+        
+        for col, img in zip(cols, preview_images):
+            with col:
+                st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
+
+        # Chamada para ação
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="text-align: center;">
+            <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
+            <a href="{Config.VIP_LINK}" style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 12px 30px;
+                border-radius: 30px;
+                text-decoration: none;
+                font-weight: bold;
+                display: inline-block;
+                margin-top: 10px;
+            ">
+                Tornar-se VIP Agora
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+
+    @staticmethod
+    def show_offers_page():
+        st.title("🎁 Ofertas Especiais")
+        st.markdown("""
+        <style>
+            .offer-card {
+                border: 1px solid #ff66b3;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: rgba(30, 0, 51, 0.3);
+            }
+            .offer-highlight {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Timer de oferta (fake)
+        st.markdown("""
+        <div style="
+            background: linear-gradient(45deg, #ff0066, #ff66b3);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+        ">
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
+        </div>
+        
+        <script>
+            function updateTimer() {
+                let timer = document.getElementById('countdown').textContent.split(':');
+                let hours = parseInt(timer[0]);
+                let minutes = parseInt(timer[1]);
+                let seconds = parseInt(timer[2]);
+                
+                seconds--;
+                if (seconds < 0) { seconds = 59; minutes--; }
+                if (minutes < 0) { minutes = 59; hours--; }
+                
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                setTimeout(updateTimer, 1000);
+            }
+            updateTimer();
+        </script>
+        """, unsafe_allow_html=True)
+
+        # Planos VIP
+        plans = [
+            {
+                "name": "1 Mês",
+                "price": "R$ 29,90",
+                "original": "R$ 49,90",
+                "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
+                "tag": "COMUM"
+            },
+            {
+                "name": "3 Meses",
+                "price": "R$ 69,90",
+                "original": "R$ 149,70",
+                "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
+                "tag": "MAIS POPULAR"
+            },
+            {
+                "name": "1 Ano",
+                "price": "R$ 199,90",
+                "original": "R$ 598,80",
+                "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
+                "tag": "MELHOR CUSTO-BENEFÍCIO"
+            }
+        ]
+
+        for plan in plans:
+            with st.container():
+                st.markdown(f"""
+                <div class="offer-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>{plan['name']}</h3>
+                        {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
+                        <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
+                    </div>
+                    <ul style="padding-left: 20px;">
+                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
+                    </ul>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="{Config.VIP_LINK}?plan={plan['name'].replace(' ', '').lower()}" style="
+                            background: linear-gradient(45deg, #ff1493, #9400d3);
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 30px;
+                            text-decoration: none;
+                            display: inline-block;
+                            font-weight: bold;
+                        ">
+                            Assinar {plan['name']}
+                        </a>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+# ======================
+# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio)
 # ======================
 class UiService:
     @staticmethod
@@ -192,19 +384,18 @@ class UiService:
     def show_status_effect(container, status_type):
         status_messages = {
             "viewed": ["Visualizado", "Mensagem recebida", "Recebido"],
-            "typing": ["Digitando", "Respondendo", "Escrevendo"],
-            "recording": ["Gravando um áudio", "Preparando mensagem vocal"]
+            "typing": ["Digitando", "Respondendo", "Escrevendo"]
         }
         
         message = random.choice(status_messages[status_type])
         dots = ""
         start_time = time.time()
-        duration = 2.5 if status_type == "viewed" else Config.AUDIO_DURATION if status_type == "recording" else random.uniform(3, 7)
+        duration = 2.5 if status_type == "viewed" else random.uniform(3, 7)
         
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
             
-            if status_type in ["typing", "recording"]:
+            if status_type == "typing":
                 dots = "." * (int(elapsed * 2) % 4)
             
             container.markdown(f"""
@@ -228,9 +419,34 @@ class UiService:
         container.empty()
 
     @staticmethod
-    def show_audio_recording_effect():
-        status_container = st.empty()
-        UiService.show_status_effect(status_container, "recording")
+    def show_audio_recording_effect(container):
+        message = "Gravando um áudio"
+        dots = ""
+        start_time = time.time()
+        
+        while time.time() - start_time < Config.AUDIO_DURATION:
+            elapsed = time.time() - start_time
+            dots = "." * (int(elapsed) % 4)
+            
+            container.markdown(f"""
+            <div style="
+                color: #888;
+                font-size: 0.8em;
+                padding: 2px 8px;
+                border-radius: 10px;
+                background: rgba(0,0,0,0.05);
+                display: inline-block;
+                margin-left: 10px;
+                vertical-align: middle;
+                font-style: italic;
+            ">
+                {message}{dots}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            time.sleep(0.3)
+        
+        container.empty()
 
     @staticmethod
     def age_verification():
@@ -462,22 +678,11 @@ class UiService:
                 text-align: center;
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
-            .audio-message {
-                background: linear-gradient(45deg, #ff66b3, #ff1493);
-                border-radius: 18px 18px 18px 0;
-                padding: 15px;
-                margin: 5px 0;
-            }
-            .audio-message audio {
-                width: 100%;
-                border-radius: 10px;
-            }
-            audio::-webkit-media-controls-panel {
-                background: linear-gradient(45deg, #ff66b3, #ff1493);
-            }
-            audio::-webkit-media-controls-play-button,
-            audio::-webkit-media-controls-mute-button {
-                filter: invert(1);
+            .stAudio {
+                border-radius: 20px;
+                background: rgba(255, 102, 179, 0.1);
+                padding: 10px;
+                margin: 10px 0;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -518,7 +723,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (atualizado para áudio)
 # ======================
 class ChatService:
     @staticmethod
@@ -540,19 +745,7 @@ class ChatService:
     def display_chat_history():
         chat_container = st.container()
         with chat_container:
-            # Mostrar o áudio como primeira mensagem
-            if st.session_state.get("audio_sent"):
-                with st.chat_message("assistant", avatar="💋"):
-                    st.markdown(f"""
-                    <div class="audio-message">
-                        <audio controls>
-                            <source src="{Config.get_audio_url()}" type="audio/mpeg">
-                        </audio>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-            # Mostrar o histórico de mensagens
-            for msg in st.session_state.messages:
+            for msg in st.session_state.messages[-12:]:
                 if msg["role"] == "user":
                     with st.chat_message("user", avatar="🧑"):
                         st.markdown(f"""
@@ -578,6 +771,13 @@ class ChatService:
                             {msg["content"]}
                         </div>
                         """, unsafe_allow_html=True)
+            
+            # Mostrar o áudio se já foi enviado
+            if st.session_state.get("audio_sent"):
+                try:
+                    st.audio(Config.AUDIO_FILE, format='audio/mp3')
+                except Exception as e:
+                    st.error(f"Erro ao carregar áudio: {str(e)}")
 
     @staticmethod
     def validate_input(user_input):
@@ -590,7 +790,14 @@ class ChatService:
         
         # Verifica se precisa enviar o áudio inicial
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
-            UiService.show_audio_recording_effect()
+            status_container = st.empty()
+            UiService.show_audio_recording_effect(status_container)
+            
+            # Adiciona o áudio ao histórico
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": "[Áudio enviado]"
+            })
             st.session_state.audio_sent = True
             st.rerun()
         
