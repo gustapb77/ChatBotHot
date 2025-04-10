@@ -14,8 +14,8 @@ from datetime import datetime
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # MANTER COMO NO SEU CÓDIGO ORIGINAL
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"  # MANTER IGUAL
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
@@ -116,19 +116,211 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
+# NOVAS PÁGINAS ADICIONADAS
+# ======================
+class NewPages:
+    @staticmethod
+    def show_home_page():
+        st.markdown("""
+        <style>
+            .hero-banner {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                padding: 80px 20px;
+                text-align: center;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 30px;
+                border: 2px solid #ff66b3;
+            }
+            .preview-img {
+                border-radius: 10px;
+                filter: blur(3px) brightness(0.7);
+                transition: all 0.3s;
+            }
+            .preview-img:hover {
+                filter: blur(0) brightness(1);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Banner principal
+        st.markdown("""
+        <div class="hero-banner">
+            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
+            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
+            <div style="margin-top: 20px;">
+                <a href="#vip" style="
+                    background: #ff66b3;
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 30px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                ">Quero Acessar Tudo</a>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Mini-galeria
+        st.subheader("🔍 Prévia do Conteúdo VIP")
+        cols = st.columns(3)
+        preview_images = [
+            "https://i.imgur.com/placeholder1.jpg",
+            "https://i.imgur.com/placeholder2.jpg",
+            "https://i.imgur.com/placeholder3.jpg"
+        ]
+        
+        for col, img in zip(cols, preview_images):
+            with col:
+                st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
+
+        # Chamada para ação
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="text-align: center;">
+            <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
+            <a href="{Config.VIP_LINK}" style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 12px 30px;
+                border-radius: 30px;
+                text-decoration: none;
+                font-weight: bold;
+                display: inline-block;
+                margin-top: 10px;
+            ">
+                Tornar-se VIP Agora
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+
+    @staticmethod
+    def show_offers_page():
+        st.title("🎁 Ofertas Especiais")
+        st.markdown("""
+        <style>
+            .offer-card {
+                border: 1px solid #ff66b3;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: rgba(30, 0, 51, 0.3);
+            }
+            .offer-highlight {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Timer de oferta (fake)
+        st.markdown("""
+        <div style="
+            background: linear-gradient(45deg, #ff0066, #ff66b3);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+        ">
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
+        </div>
+        
+        <script>
+            function updateTimer() {
+                let timer = document.getElementById('countdown').textContent.split(':');
+                let hours = parseInt(timer[0]);
+                let minutes = parseInt(timer[1]);
+                let seconds = parseInt(timer[2]);
+                
+                seconds--;
+                if (seconds < 0) { seconds = 59; minutes--; }
+                if (minutes < 0) { minutes = 59; hours--; }
+                
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                setTimeout(updateTimer, 1000);
+            }
+            updateTimer();
+        </script>
+        """, unsafe_allow_html=True)
+
+        # Planos VIP
+        plans = [
+            {
+                "name": "1 Mês",
+                "price": "R$ 29,90",
+                "original": "R$ 49,90",
+                "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
+                "tag": "COMUM"
+            },
+            {
+                "name": "3 Meses",
+                "price": "R$ 69,90",
+                "original": "R$ 149,70",
+                "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
+                "tag": "MAIS POPULAR"
+            },
+            {
+                "name": "1 Ano",
+                "price": "R$ 199,90",
+                "original": "R$ 598,80",
+                "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
+                "tag": "MELHOR CUSTO-BENEFÍCIO"
+            }
+        ]
+
+        for plan in plans:
+            with st.container():
+                st.markdown(f"""
+                <div class="offer-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>{plan['name']}</h3>
+                        {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
+                        <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
+                    </div>
+                    <ul style="padding-left: 20px;">
+                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
+                    </ul>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="{Config.VIP_LINK}?plan={plan['name'].replace(' ', '').lower()}" style="
+                            background: linear-gradient(45deg, #ff1493, #9400d3);
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 30px;
+                            text-decoration: none;
+                            display: inline-block;
+                            font-weight: bold;
+                        ">
+                            Assinar {plan['name']}
+                        </a>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+# ======================
 # SERVIÇOS DE INTERFACE (UI)
 # ======================
 class UiService:
     @staticmethod
     def show_call_effect():
-        # Configuração do delay (8 segundos no total)
-        LIGANDO_DELAY = 5  # Fase "Ligando..."
-        ATENDIDA_DELAY = 3  # Fase "Chamada atendida"
+        LIGANDO_DELAY = 5
+        ATENDIDA_DELAY = 3
 
-        # Container único para toda a animação
         call_container = st.empty()
 
-        # --- FASE 1: LIGANDO ---
+        # Fase 1: Ligando
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -158,9 +350,9 @@ class UiService:
         </style>
         """, unsafe_allow_html=True)
         
-        time.sleep(LIGANDO_DELAY)  # Espera 5 segundos
+        time.sleep(LIGANDO_DELAY)
 
-        # --- FASE 2: ATENDIDA ---
+        # Fase 2: Atendida
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -179,8 +371,8 @@ class UiService:
         </div>
         """, unsafe_allow_html=True)
         
-        time.sleep(ATENDIDA_DELAY)  # Espera 3 segundos
-        call_container.empty()  # Remove a tela
+        time.sleep(ATENDIDA_DELAY)
+        call_container.empty()
 
     @staticmethod
     def show_status_effect(container, status_type):
@@ -300,8 +492,18 @@ class UiService:
                     text-align: center;
                     margin: 10px 0;
                 }
+                .menu-item {
+                    transition: all 0.3s;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                .menu-item:hover {
+                    background: rgba(255, 102, 179, 0.2);
+                }
             </style>
+            """, unsafe_allow_html=True)
             
+            st.markdown("""
             <div class="sidebar-header">
                 <img src="https://i.imgur.com/XYZ1234.png" alt="Paloma">
                 <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
@@ -312,7 +514,7 @@ class UiService:
             st.markdown("### 🌟 Menu Exclusivo")
             
             menu_options = {
-                "💋 Início": "chat",
+                "💋 Início": "home",
                 "📸 Galeria Privada": "gallery",
                 "💌 Mensagens": "messages",
                 "🎁 Ofertas Especiais": "offers"
@@ -492,7 +694,7 @@ class ChatService:
                 "messages": [],
                 "session_id": str(random.randint(100000, 999999)),
                 "request_count": 0,
-                "current_page": "chat",
+                "current_page": "home",  # Alterado para home como página padrão
                 "show_vip_offer": False
             })
 
@@ -630,7 +832,7 @@ def main():
     UiService.setup_sidebar()
     
     if not st.session_state.connection_complete:
-        UiService.show_call_effect()  # Chamada atualizada com delay de 8s e status online
+        UiService.show_call_effect()
         st.session_state.connection_complete = True
         st.rerun()
     
@@ -650,8 +852,12 @@ def main():
                 st.rerun()
         st.stop()
     
-    if st.session_state.current_page == "gallery":
+    if st.session_state.current_page == "home":
+        NewPages.show_home_page()
+    elif st.session_state.current_page == "gallery":
         UiService.show_gallery_page(conn)
+    elif st.session_state.current_page == "offers":
+        NewPages.show_offers_page()
     elif st.session_state.get("show_vip_offer", False):
         st.warning("Página VIP em desenvolvimento")
         if st.button("← Voltar ao chat"):
