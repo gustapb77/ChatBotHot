@@ -21,9 +21,7 @@ class Config:
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    
-    # Configuração do áudio (modifique para sua URL do GitHub)
-    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"  # URL raw do GitHub
+    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"
     AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
@@ -316,7 +314,7 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio)
+# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio no fluxo)
 # ======================
 class UiService:
     @staticmethod
@@ -332,38 +330,6 @@ class UiService:
             <audio controls style="width:100%; height:40px;">
                 <source src="{Config.AUDIO_FILE}" type="audio/mp3">
             </audio>
-        </div>
-        """
-
-    @staticmethod
-    def get_fixed_audio_player():
-        """Player de áudio fixo no topo do chat"""
-        return f"""
-        <div style="
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 102, 179, 0.3);
-            padding-bottom: 20px;
-        ">
-            <div style="
-                color: #ff66b3;
-                font-weight: bold;
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <span>🎤</span>
-                <span>Mensagem de Voz</span>
-            </div>
-            <div style="
-                background: rgba(255,255,255,0.1);
-                border-radius: 15px;
-                padding: 10px;
-            ">
-                <audio controls style="width:100%; height:40px;">
-                    <source src="{Config.AUDIO_FILE}" type="audio/mp3">
-                </audio>
-            </div>
         </div>
         """
 
@@ -726,11 +692,6 @@ class UiService:
                 text-align: center;
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
-            .audio-fixed-container {
-                margin-bottom: 20px;
-                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
-                padding-bottom: 20px;
-            }
             .stAudio {
                 border-radius: 20px !important;
                 background: rgba(255, 102, 179, 0.1) !important;
@@ -779,7 +740,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (atualizado para áudio)
+# SERVIÇOS DE CHAT (atualizado para áudio no fluxo)
 # ======================
 class ChatService:
     @staticmethod
@@ -801,11 +762,6 @@ class ChatService:
     def display_chat_history():
         chat_container = st.container()
         with chat_container:
-            # Player FIXO no topo (se áudio foi enviado)
-            if st.session_state.get("audio_sent"):
-                st.markdown(UiService.get_fixed_audio_player(), unsafe_allow_html=True)
-            
-            # Histórico de mensagens
             for msg in st.session_state.messages[-12:]:
                 if msg["role"] == "user":
                     with st.chat_message("user", avatar="🧑"):
@@ -819,12 +775,9 @@ class ChatService:
                             {msg["content"]}
                         </div>
                         """, unsafe_allow_html=True)
-                
-                # Mensagem especial para áudio no histórico
                 elif msg["content"] == "[ÁUDIO]":
                     with st.chat_message("assistant", avatar="💋"):
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
-                
                 else:
                     with st.chat_message("assistant", avatar="💋"):
                         st.markdown(f"""
@@ -848,12 +801,11 @@ class ChatService:
     def process_user_input(conn):
         ChatService.display_chat_history()
         
-        # Envio do áudio inicial (apenas uma vez)
+        # Envio do áudio inicial
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
             UiService.show_audio_recording_effect(status_container)
             
-            # Adiciona ao histórico como mensagem especial
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": "[ÁUDIO]"
