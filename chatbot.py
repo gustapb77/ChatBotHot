@@ -8,20 +8,26 @@ import time
 import random
 import sqlite3
 import re
+import os
 from datetime import datetime
+from pathlib import Path
 
 # ======================
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configuração do áudio (modifique para sua URL do GitHub)
+    AUDIO_FILE = "https://raw.githubusercontent.com/seu-usuario/seu-repo/main/paloma_audio.mp3"  # URL raw do GitHub
+    AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
-# MODELOS DE DADOS
+# MODELOS DE DADOS (mantido original)
 # ======================
 class Persona:
     PALOMA = """
@@ -45,7 +51,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (mantido original)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -72,7 +78,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (mantido original)
 # ======================
 class ApiService:
     @staticmethod
@@ -116,7 +122,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# NOVAS PÁGINAS ADICIONADAS
+# NOVAS PÁGINAS ADICIONADAS (mantido original)
 # ======================
 class NewPages:
     @staticmethod
@@ -310,7 +316,7 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI)
+# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio)
 # ======================
 class UiService:
     @staticmethod
@@ -391,6 +397,36 @@ class UiService:
             
             if status_type == "typing":
                 dots = "." * (int(elapsed * 2) % 4)
+            
+            container.markdown(f"""
+            <div style="
+                color: #888;
+                font-size: 0.8em;
+                padding: 2px 8px;
+                border-radius: 10px;
+                background: rgba(0,0,0,0.05);
+                display: inline-block;
+                margin-left: 10px;
+                vertical-align: middle;
+                font-style: italic;
+            ">
+                {message}{dots}
+            </div>
+            """, unsafe_allow_html=True)
+            
+            time.sleep(0.3)
+        
+        container.empty()
+
+    @staticmethod
+    def show_audio_recording_effect(container):
+        message = "Gravando um áudio"
+        dots = ""
+        start_time = time.time()
+        
+        while time.time() - start_time < Config.AUDIO_DURATION:
+            elapsed = time.time() - start_time
+            dots = "." * (int(elapsed) % 4)
             
             container.markdown(f"""
             <div style="
@@ -642,6 +678,12 @@ class UiService:
                 text-align: center;
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
+            .stAudio {
+                border-radius: 20px;
+                background: rgba(255, 102, 179, 0.1);
+                padding: 10px;
+                margin: 10px 0;
+            }
         </style>
         """, unsafe_allow_html=True)
         
@@ -681,7 +723,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (atualizado para áudio)
 # ======================
 class ChatService:
     @staticmethod
@@ -694,8 +736,9 @@ class ChatService:
                 "messages": [],
                 "session_id": str(random.randint(100000, 999999)),
                 "request_count": 0,
-                "current_page": "home",  # Alterado para home como página padrão
-                "show_vip_offer": False
+                "current_page": "home",
+                "show_vip_offer": False,
+                "audio_sent": False
             })
 
     @staticmethod
@@ -728,6 +771,13 @@ class ChatService:
                             {msg["content"]}
                         </div>
                         """, unsafe_allow_html=True)
+            
+            # Mostrar o áudio se já foi enviado
+            if st.session_state.get("audio_sent"):
+                try:
+                    st.audio(Config.AUDIO_FILE, format='audio/mp3')
+                except Exception as e:
+                    st.error(f"Erro ao carregar áudio: {str(e)}")
 
     @staticmethod
     def validate_input(user_input):
@@ -737,6 +787,19 @@ class ChatService:
     @staticmethod
     def process_user_input(conn):
         ChatService.display_chat_history()
+        
+        # Verifica se precisa enviar o áudio inicial
+        if not st.session_state.get("audio_sent") and st.session_state.chat_started:
+            status_container = st.empty()
+            UiService.show_audio_recording_effect(status_container)
+            
+            # Adiciona o áudio ao histórico
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": "[Áudio enviado]"
+            })
+            st.session_state.audio_sent = True
+            st.rerun()
         
         user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
         
@@ -848,7 +911,11 @@ def main():
             """, unsafe_allow_html=True)
             
             if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
-                st.session_state.chat_started = True
+                st.session_state.update({
+                    "chat_started": True,
+                    "current_page": "chat",
+                    "audio_sent": False
+                })
                 st.rerun()
         st.stop()
     
