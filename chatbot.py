@@ -170,9 +170,9 @@ class NewPages:
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
         preview_images = [
-            "https://i.imgur.com/placeholder1.jpg",
-            "https://i.imgur.com/placeholder2.jpg",
-            "https://i.imgur.com/placeholder3.jpg"
+            "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
+            "https://i.ibb.co/Y4B7CbXf/IMG-9202.jpg",
+            "https://i.ibb.co/Fqf0gPPq/IMG-9199.jpg"
         ]
         
         for col, img in zip(cols, preview_images):
