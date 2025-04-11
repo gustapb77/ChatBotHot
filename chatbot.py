@@ -1,5 +1,5 @@
 # ======================
-# IMPORTAÇÕES (MANTIDAS INTEGRALMENTE)
+# IMPORTAÇÕES
 # ======================
 import streamlit as st
 import requests
@@ -13,20 +13,19 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES (ALTERAÇÃO APENAS NO AUDIO)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    DRIVE_AUDIO_ID = "18qEpSBDEL7050Z-O-3WtoN9K5x_ualaG"  # 👈 (SUBSTITUA PELO ID REAL)
-    AUDIO_FILE = f"https://drive.google.com/uc?export=download&id={DRIVE_AUDIO_ID}"  # Nova URL
-    AUDIO_DURATION = 7
+    AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
+    AUDIO_DURATION = 7  # Segundos do áudio
 
 # ======================
-# MODELOS DE DADOS (INTEGRALMENTE ORIGINAL)
+# MODELOS DE DADOS (mantido original)
 # ======================
 class Persona:
     PALOMA = """
@@ -50,7 +49,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS (mantido original)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -77,7 +76,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API (mantido original)
 # ======================
 class ApiService:
     @staticmethod
@@ -121,7 +120,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# NOVAS PÁGINAS (ORIGINAL)
+# NOVAS PÁGINAS ADICIONADAS (mantido original)
 # ======================
 class NewPages:
     @staticmethod
@@ -148,6 +147,7 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
+        # Banner principal
         st.markdown("""
         <div class="hero-banner">
             <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
@@ -166,6 +166,7 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
+        # Mini-galeria
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
         preview_images = [
@@ -179,6 +180,7 @@ class NewPages:
                 st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
+        # Chamada para ação
         st.markdown("---")
         st.markdown(f"""
         <div style="text-align: center;">
@@ -220,6 +222,7 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
+        # Timer de oferta (fake)
         st.markdown("""
         <div style="
             background: linear-gradient(45deg, #ff0066, #ff66b3);
@@ -254,6 +257,7 @@ class NewPages:
         </script>
         """, unsafe_allow_html=True)
 
+        # Planos VIP
         plans = [
             {
                 "name": "1 Mês",
@@ -310,12 +314,12 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE INTERFACE (ALTERAÇÃO APENAS NO PLAYER)
+# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio no fluxo)
 # ======================
 class UiService:
     @staticmethod
     def get_chat_audio_player():
-        """Player modificado para Google Drive"""
+        """Player de áudio estilizado para o fluxo de mensagens"""
         return f"""
         <div style="
             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -324,7 +328,7 @@ class UiService:
             margin: 5px 0;
         ">
             <audio controls style="width:100%; height:40px;">
-                <source src="{Config.AUDIO_FILE}" type="audio/mpeg">
+                <source src="{Config.AUDIO_FILE}" type="audio/mp3">
             </audio>
         </div>
         """
@@ -336,6 +340,7 @@ class UiService:
 
         call_container = st.empty()
 
+        # Fase 1: Ligando
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -367,6 +372,7 @@ class UiService:
         
         time.sleep(LIGANDO_DELAY)
 
+        # Fase 2: Atendida
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -734,7 +740,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ORIGINAL)
+# SERVIÇOS DE CHAT (atualizado para áudio no fluxo)
 # ======================
 class ChatService:
     @staticmethod
@@ -795,6 +801,7 @@ class ChatService:
     def process_user_input(conn):
         ChatService.display_chat_history()
         
+        # Envio do áudio inicial
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
             UiService.show_audio_recording_effect(status_container)
@@ -863,7 +870,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ORIGINAL)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
     st.markdown("""
