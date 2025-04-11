@@ -1,0 +1,289 @@
+import streamlit as st
+import requests
+import json
+import time
+import random
+import sqlite3
+from datetime import datetime
+from io import BytesIO
+import base64
+import os
+
+# ======================
+# CONFIGURAÇÕES DA API
+# ======================
+API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+VIP_LINK = "https://exemplo.com/vip"
+AUDIO_FILE = "audio_paloma.mp3"  # Coloque seu arquivo de áudio na mesma pasta
+
+# ======================
+# PERSONALIDADE DA PALOMA
+# ======================
+PERSONA_PALOMA = """
+Você é Paloma, criadora de conteúdo adulto premium. Suas características:
+
+[TOM]
+- Linguagem: informal mas sofisticada (use "você", "amor", "querido")
+- Sedução: sugestiva, nunca explícita
+- Persuasão: focada em despertar curiosidade
+
+[TÉCNICAS DE VENDA]
+1. Escassez: "Isso é só para os meus mais chegados..."
+2. Prova Social: "Meus assinantes sempre pedem mais..."
+3. Benefícios: "Você vai ter acesso a..."
+4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
+
+[REGRA DE OURO]
+- Nunca diga diretamente "compre" ou "assine"
+- Sempre insinue, sugira, provoque curiosidade
+- Envie o link quando o cliente pedir para "ver", "foto", "vídeo" ou similar
+"""
+
+# ======================
+# FUNÇÕES AUXILIARES
+# ======================
+def audio_player(audio_file):
+    """Exibe um player de áudio estilizado"""
+    try:
+        with open(audio_file, "rb") as f:
+            audio_bytes = f.read()
+        audio_str = "data:audio/mp3;base64," + base64.b64encode(audio_bytes).decode()
+        audio_html = f"""
+        <div style="margin-top: 10px;">
+            <audio controls autoplay style="
+                width: 100%;
+                border-radius: 15px;
+                box-shadow: 0 0 10px rgba(255,102,179,0.3);
+                background: rgba(255,102,179,0.1);
+            ">
+                <source src="{audio_str}" type="audio/mp3">
+            </audio>
+        </div>
+        """
+        st.markdown(audio_html, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Erro ao carregar o áudio: {str(e)}")
+
+# ======================
+# BANCO DE DADOS
+# ======================
+def init_db():
+    conn = sqlite3.connect('chat_history.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS conversations
+                (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                 session_id TEXT,
+                 timestamp DATETIME,
+                 role TEXT,
+                 content TEXT,
+                 has_audio BOOLEAN DEFAULT FALSE)''')
+    conn.commit()
+    return conn
+
+def save_message(conn, session_id, role, content, has_audio=False):
+    c = conn.cursor()
+    c.execute("INSERT INTO conversations (session_id, timestamp, role, content, has_audio) VALUES (?, ?, ?, ?, ?)",
+             (session_id, datetime.now(), role, content, has_audio))
+    conn.commit()
+
+# ======================
+# FUNÇÃO DA API
+# ======================
+def ask_gemini(prompt, session_id, conn):
+    if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo"]):
+        save_message(conn, session_id, "user", prompt)
+        resposta = f"Quer ver tudo amor? 💋 {VIP_LINK}"
+        save_message(conn, session_id, "assistant", resposta)
+        return resposta
+    
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "contents": [{
+            "role": "user",
+            "parts": [{"text": PERSONA_PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+        }]
+    }
+    
+    try:
+        response = requests.post(API_URL, headers=headers, json=data, timeout=30)
+        resposta = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        
+        if random.random() > 0.7:
+            resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+        
+        save_message(conn, session_id, "user", prompt)
+        save_message(conn, session_id, "assistant", resposta)
+        return resposta
+    except Exception:
+        return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+
+# ======================
+# INTERFACE DO CHAT
+# ======================
+def initialize_session():
+    if "age_verified" not in st.session_state:
+        st.session_state.update({
+            "age_verified": False,
+            "connection_complete": False,
+            "chat_started": False,
+            "messages": [],
+            "session_id": str(random.randint(100000, 999999)),
+            "request_count": 0,
+            "current_page": "chat",
+            "show_gallery": False,
+            "show_vip_offer": False,
+            "show_messages": False,
+            "show_offers": False
+        })
+
+def display_chat_history():
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+            if msg.get("has_audio"):
+                audio_player(AUDIO_FILE)
+
+def process_user_input(conn):
+    display_chat_history()
+    
+    if prompt := st.chat_input("Oi amor, como posso te ajudar hoje?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.request_count += 1
+        
+        with st.chat_message("user"):
+            st.write(prompt)
+        
+        resposta = ask_gemini(prompt, st.session_state.session_id, conn)
+        
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            for chunk in resposta.split():
+                full_response += chunk + " "
+                time.sleep(0.1)
+                message_placeholder.markdown(f"💋 {full_response}")
+            message_placeholder.markdown(f"💋 {resposta} {random.choice(['😈', '🔥', '💋'])}")
+        
+        st.session_state.messages.append({"role": "assistant", "content": resposta})
+
+# ======================
+# APLICAÇÃO PRINCIPAL
+# ======================
+def main():
+    # Configuração de estilo
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+            border-right: 1px solid #ff66b3 !important;
+        }
+        .stButton button {
+            background: rgba(255, 20, 147, 0.2) !important;
+            color: white !important;
+            border: 1px solid #ff66b3 !important;
+        }
+        .stChatMessage {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.title("💋 Paloma - Conteúdo Exclusivo")
+    conn = init_db()
+    
+    initialize_session()
+    
+    # Verificação de idade
+    if not st.session_state.age_verified:
+        with st.container():
+            st.markdown("""
+            <div style="
+                max-width: 500px;
+                margin: 50px auto;
+                padding: 30px;
+                background: linear-gradient(145deg, #1e0033, #3c0066);
+                border-radius: 15px;
+                color: white;
+                text-align: center;
+            ">
+                <h2 style="color: #ff66b3;">🔞 Verificação de Idade</h2>
+                <p>Este conteúdo é exclusivo para maiores de 18 anos</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.checkbox("Eu confirmo que sou maior de 18 anos", key="age_checkbox"):
+                st.session_state.age_verified = True
+                st.rerun()
+        return
+    
+    # Menu lateral
+    with st.sidebar:
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="color: #ff66b3;">Paloma Premium</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.button("💋 Iniciar Chat", use_container_width=True)
+        st.button("📸 Galeria VIP", use_container_width=True)
+        st.button("💌 Mensagens", use_container_width=True)
+        
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center;">
+            <a href="{VIP_LINK}" style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 10px 15px;
+                border-radius: 5px;
+                text-decoration: none;
+                display: inline-block;
+                margin-top: 10px;
+            ">🔼 Tornar-se VIP</a>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Fluxo principal do chat
+    if not st.session_state.chat_started:
+        col1, col2, col3 = st.columns([1,3,1])
+        with col2:
+            st.markdown("""
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="color: #ff66b3;">Paloma</h2>
+                <p>Estou pronta para você, amor...</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
+                # Adiciona mensagem de gravação no chat
+                with st.chat_message("assistant"):
+                    st.write("Paloma está gravando áudio...")
+                
+                # Simula 7 segundos de gravação
+                time.sleep(7)
+                
+                # Adiciona o áudio diretamente no chat
+                with st.chat_message("assistant"):
+                    audio_player(AUDIO_FILE)
+                
+                # Atualiza o histórico
+                st.session_state.messages.extend([
+                    {"role": "assistant", "content": "Paloma está gravando áudio..."},
+                    {"role": "assistant", "content": "[Áudio]", "has_audio": True}
+                ])
+                
+                st.session_state.chat_started = True
+                st.rerun()
+        return
+    
+    # Chat principal
+    process_user_input(conn)
+    conn.close()
+
+if __name__ == "__main__":
+    main()
