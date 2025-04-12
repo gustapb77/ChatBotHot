@@ -19,6 +19,9 @@ class Config:
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
+    CHECKOUT_START = "https://checkout.exemplo.com/start"
+    CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
+    CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
@@ -197,7 +200,6 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        # BOTÃO ADICIONADO AQUI (MESMO ESTILO DA GALERIA)
         if st.button("← Voltar ao chat", key="back_from_home"):
             st.session_state.current_page = "chat"
             st.rerun()
@@ -230,10 +232,80 @@ class NewPages:
                 box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
                 text-align: center;
             }
+            .package-container {
+                display: flex;
+                justify-content: space-between;
+                margin: 30px 0;
+                gap: 20px;
+            }
+            .package-box {
+                flex: 1;
+                background: rgba(30, 0, 51, 0.3);
+                border-radius: 15px;
+                padding: 20px;
+                border: 1px solid;
+                transition: all 0.3s;
+                min-height: 400px;
+                position: relative;
+                overflow: hidden;
+            }
+            .package-box:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(255, 102, 179, 0.3);
+            }
+            .package-start {
+                border-color: #ff66b3;
+            }
+            .package-premium {
+                border-color: #9400d3;
+            }
+            .package-extreme {
+                border-color: #ff0066;
+            }
+            .package-header {
+                text-align: center;
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
+            }
+            .package-price {
+                font-size: 1.8em;
+                font-weight: bold;
+                margin: 10px 0;
+            }
+            .package-benefits {
+                list-style-type: none;
+                padding: 0;
+            }
+            .package-benefits li {
+                padding: 8px 0;
+                position: relative;
+                padding-left: 25px;
+            }
+            .package-benefits li:before {
+                content: "✓";
+                color: #ff66b3;
+                position: absolute;
+                left: 0;
+                font-weight: bold;
+            }
+            .package-badge {
+                position: absolute;
+                top: 15px;
+                right: -30px;
+                background: #ff0066;
+                color: white;
+                padding: 5px 30px;
+                transform: rotate(45deg);
+                font-size: 0.8em;
+                font-weight: bold;
+                width: 100px;
+                text-align: center;
+            }
         </style>
         """, unsafe_allow_html=True)
 
-        # Container do temporizador (AGORA FUNCIONAL)
+        # Container do temporizador
         st.markdown("""
         <div class="countdown-container">
             <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
@@ -242,7 +314,7 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        # JavaScript para o countdown - IMPLEMENTAÇÃO FUNCIONAL
+        # JavaScript para o countdown
         st.components.v1.html("""
         <script>
         function updateCountdown() {
@@ -265,11 +337,137 @@ class NewPages:
             setTimeout(updateCountdown, 1000);
         }
         
-        // Inicia após 1 segundo para garantir que o elemento exista
         setTimeout(updateCountdown, 1000);
         </script>
         """, height=0)
 
+        # ============= NOVA SEÇÃO DE PACOTES =============
+        st.markdown("""
+        <div style="text-align: center; margin: 40px 0;">
+            <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
+            <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Container dos pacotes
+        st.markdown('<div class="package-container">', unsafe_allow_html=True)
+        
+        # Pacote Start
+        st.markdown("""
+        <div class="package-box package-start">
+            <div class="package-header">
+                <h3 style="color: #ff66b3;">START</h3>
+                <div class="package-price" style="color: #ff66b3;">R$ 49,90</div>
+                <small>para iniciantes</small>
+            </div>
+            <ul class="package-benefits">
+                <li>15 fotos inéditas</li>
+                <li>1 vídeo surpresa (5min)</li>
+                <li>Acesso por 7 dias</li>
+                <li>Chat básico</li>
+                <li>Atualizações semanais</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
+            </div>
+        </div>
+        """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
+
+        # Pacote Premium
+        st.markdown("""
+        <div class="package-box package-premium">
+            <div class="package-badge">POPULAR</div>
+            <div class="package-header">
+                <h3 style="color: #9400d3;">PREMIUM</h3>
+                <div class="package-price" style="color: #9400d3;">R$ 99,90</div>
+                <small>experiência completa</small>
+            </div>
+            <ul class="package-benefits">
+                <li>45 fotos exclusivas</li>
+                <li>5 vídeos premium (10min cada)</li>
+                <li>Acesso por 30 dias</li>
+                <li>Chat prioritário</li>
+                <li>Atualizações diárias</li>
+                <li>1 conteúdo personalizado</li>
+                <li>Lista de desejos VIP</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #9400d3, #ff1493);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
+            </div>
+        </div>
+        """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
+
+        # Pacote Extreme
+        st.markdown("""
+        <div class="package-box package-extreme">
+            <div class="package-header">
+                <h3 style="color: #ff0066;">EXTREME</h3>
+                <div class="package-price" style="color: #ff0066;">R$ 199,90</div>
+                <small>para verdadeiros fãs</small>
+            </div>
+            <ul class="package-benefits">
+                <li>100+ fotos ultra-exclusivas</li>
+                <li>15 vídeos HD (15min+ cada)</li>
+                <li>Acesso vitalício</li>
+                <li>Chat 24/7 com prioridade máxima</li>
+                <li>Atualizações em tempo real</li>
+                <li>5 conteúdos personalizados</li>
+                <li>Encontros virtuais mensais</li>
+                <li>Presentes físicos surpresa</li>
+                <li>Acesso a conteúdos futuros</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_extreme}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #ff0066, #9400d3);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
+            </div>
+        </div>
+        """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)  # Fecha container
+        st.markdown("---")
+
+        # Seção original de planos (mantida intacta)
         plans = [
             {
                 "name": "1 Mês",
@@ -325,7 +523,6 @@ class NewPages:
                 </div>
                 """, unsafe_allow_html=True)
 
-        # BOTÃO ADICIONADO AQUI (MESMO ESTILO DA GALERIA)
         if st.button("← Voltar ao chat", key="back_from_offers"):
             st.session_state.current_page = "chat"
             st.rerun()
