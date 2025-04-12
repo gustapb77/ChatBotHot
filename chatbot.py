@@ -9,7 +9,8 @@ import random
 import sqlite3
 import re
 import os
-from datetime import datetime
+import datetime  # Adicionei esta linha para o temporizador
+from datetime import timedelta  # Adicionei esta linha para o temporizador
 from pathlib import Path
 
 # ======================
@@ -70,7 +71,7 @@ class DatabaseService:
         try:
             c = conn.cursor()
             c.execute("INSERT INTO conversations (session_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
-                     (session_id, datetime.now(), role, content))
+                     (session_id, datetime.datetime.now(), role, content))
             conn.commit()
         except sqlite3.Error as e:
             st.error(f"Erro ao salvar mensagem: {e}")
@@ -224,38 +225,50 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div style="
-            background: linear-gradient(45deg, #ff0066, #ff66b3);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
-        ">
-            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
-            <p style="margin:5px 0 0;">Termina em breve!</p>
-        </div>
-        
-        <script>
-            function updateTimer() {
-                let timer = document.getElementById('countdown').textContent.split(':');
-                let hours = parseInt(timer[0]);
-                let minutes = parseInt(timer[1]);
-                let seconds = parseInt(timer[2]);
-                
-                seconds--;
-                if (seconds < 0) { seconds = 59; minutes--; }
-                if (minutes < 0) { minutes = 59; hours--; }
-                
-                document.getElementById('countdown').textContent = 
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                setTimeout(updateTimer, 1000);
-            }
-            updateTimer();
-        </script>
-        """, unsafe_allow_html=True)
+        # ===== TEMPORIZADOR FUNCIONAL (NOVO) =====
+        if "tempo_final" not in st.session_state:
+            st.session_state.tempo_final = datetime.datetime.now() + datetime.timedelta(hours=24)
+
+        countdown_placeholder = st.empty()
+        tempo_restante = st.session_state.tempo_final - datetime.datetime.now()
+
+        if tempo_restante.total_seconds() <= 0:
+            countdown_placeholder.markdown("""
+            <div style="
+                background: #ff0000;
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                text-align: center;
+                margin-bottom: 20px;
+            ">
+                <p style="margin:0; font-weight: bold;">OFERTA ENCERRADA! ⏰</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            horas, resto = divmod(int(tempo_restante.total_seconds()), 3600)
+            minutos, segundos = divmod(resto, 60)
+            tempo_formatado = f"{horas:02d}:{minutos:02d}:{segundos:02d}"
+
+            countdown_placeholder.markdown(f"""
+            <div style="
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                text-align: center;
+                margin-bottom: 20px;
+            ">
+                <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+                <div style="font-size: 1.5em; font-weight: bold;">{tempo_formatado}</div>
+                <p style="margin:5px 0 0;">Termina em breve!</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Atualiza a cada segundo
+            time.sleep(1)
+            st.rerun()
+        # ===== FIM DO TEMPORIZADOR =====
 
         plans = [
             {
