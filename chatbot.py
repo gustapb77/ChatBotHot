@@ -458,8 +458,8 @@ class UiService:
         <style>
             .age-verification {
                 max-width: 600px;
-                margin: 2rem auto;
-                padding: 2rem;
+                margin: 1rem auto;
+                padding: 1.5rem;
                 background: linear-gradient(145deg, #1e0033, #3c0066);
                 border-radius: 15px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -469,18 +469,37 @@ class UiService:
             .age-header {
                 display: flex;
                 align-items: center;
-                gap: 15px;
-                margin-bottom: 1.5rem;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+                text-align: center;
             }
             .age-icon {
-                font-size: 2.5rem;
+                font-size: 2rem;
                 color: #ff66b3;
+                flex-shrink: 0;
             }
             .age-title {
-                font-size: 1.8rem;
+                font-size: clamp(1.3rem, 4vw, 1.8rem);
                 font-weight: 700;
                 margin: 0;
                 color: #ff66b3;
+                word-break: keep-all;
+                white-space: nowrap;
+            }
+            .age-content p {
+                font-size: clamp(0.9rem, 3vw, 1rem);
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            @media (max-width: 480px) {
+                .age-verification {
+                    padding: 1rem;
+                }
+                .age-header {
+                    gap: 5px;
+                }
             }
         </style>
         """, unsafe_allow_html=True)
@@ -499,14 +518,30 @@ class UiService:
             </div>
             """, unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            if st.button("✅ Confirmo que sou maior de 18 anos", 
-                        key="age_checkbox",
-                        use_container_width=True,
-                        type="primary"):
-                st.session_state.age_verified = True
-                st.rerun()
+        st.markdown("""
+        <style>
+            .age-btn-container {
+                display: flex;
+                justify-content: center;
+                padding: 0 10px;
+            }
+            .stButton>button {
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+        </style>
+        <div class="age-btn-container">
+        """, unsafe_allow_html=True)
+        
+        if st.button("✅ Confirmo que sou maior de 18 anos", 
+                    key="age_checkbox",
+                    use_container_width=True,
+                    type="primary"):
+            st.session_state.age_verified = True
+            st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
     @staticmethod
     def setup_sidebar():
@@ -671,66 +706,53 @@ class UiService:
 
     @staticmethod
     def chat_shortcuts():
-        """Barra de atalhos profissionais para o chat"""
         st.markdown("""
         <style>
-            .chat-shortcuts {
-                display: flex;
-                justify-content: space-between;
-                gap: 8px;
+            .chat-shortcuts-container {
+                width: 100%;
+                overflow-x: auto;
+                padding-bottom: 10px;
                 margin-bottom: 15px;
-                flex-wrap: wrap;
+            }
+            .chat-shortcuts {
+                display: inline-flex;
+                gap: 8px;
+                min-width: 100%;
             }
             .chat-shortcut-btn {
-                flex: 1;
-                min-width: 100px;
+                flex: 1 0 auto;
+                min-width: 80px;
                 background: rgba(255, 102, 179, 0.15) !important;
                 border: 1px solid #ff66b3 !important;
                 border-radius: 8px !important;
                 transition: all 0.3s !important;
                 padding: 8px 5px !important;
+                white-space: nowrap;
+            }
+            @media (min-width: 768px) {
+                .chat-shortcuts {
+                    display: flex;
+                    justify-content: space-between;
+                }
             }
             .chat-shortcut-btn:hover {
                 background: rgba(255, 102, 179, 0.3) !important;
                 transform: translateY(-2px) !important;
                 box-shadow: 0 2px 8px rgba(255, 102, 179, 0.2) !important;
             }
-            .chat-shortcut-btn:active {
-                transform: translateY(0) !important;
-            }
         </style>
         """, unsafe_allow_html=True)
         
-        with st.container():
-            cols = st.columns(4)
-            
-            with cols[0]:
-                if st.button("🏠 Início", 
-                           key="chat_shortcut_home",
-                           help="Voltar para a página inicial"):
-                    st.session_state.current_page = "home"
-                    st.rerun()
-            
-            with cols[1]:
-                if st.button("📸 Galeria", 
-                           key="chat_shortcut_gallery",
-                           help="Acessar galeria exclusiva"):
-                    st.session_state.current_page = "gallery"
-                    st.rerun()
-            
-            with cols[2]:
-                if st.button("🎁 Ofertas", 
-                           key="chat_shortcut_offers",
-                           help="Ver ofertas especiais"):
-                    st.session_state.current_page = "offers"
-                    st.rerun()
-            
-            with cols[3]:
-                if st.button("💎 VIP", 
-                           key="chat_shortcut_vip",
-                           help="Área exclusiva para assinantes"):
-                    st.session_state.current_page = "offers"
-                    st.rerun()
+        st.markdown("""
+        <div class="chat-shortcuts-container">
+            <div class="chat-shortcuts">
+                <button onclick="window.location.href='#home'" class="chat-shortcut-btn">🏠 Início</button>
+                <button onclick="window.location.href='#gallery'" class="chat-shortcut-btn">📸 Galeria</button>
+                <button onclick="window.location.href='#offers'" class="chat-shortcut-btn">🎁 Ofertas</button>
+                <button onclick="window.location.href='#vip'" class="chat-shortcut-btn">💎 VIP</button>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     @staticmethod
     def enhanced_chat_ui(conn):
