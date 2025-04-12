@@ -197,6 +197,11 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
+        # BOTÃO ADICIONADO AQUI (MESMO ESTILO DA GALERIA)
+        if st.button("← Voltar ao chat", key="back_from_home"):
+            st.session_state.current_page = "chat"
+            st.rerun()
+
     @staticmethod
     def show_offers_page():
         st.title("🎁 Ofertas Especiais")
@@ -225,7 +230,6 @@ class NewPages:
             color: white;
             padding: 15px;
             border-radius: 10px;
-            text-align: center;
             margin-bottom: 30px;
             box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
         ">
@@ -307,6 +311,11 @@ class NewPages:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+        # BOTÃO ADICIONADO AQUI (MESMO ESTILO DA GALERIA)
+        if st.button("← Voltar ao chat", key="back_from_offers"):
+            st.session_state.current_page = "chat"
+            st.rerun()
 
 # ======================
 # SERVIÇOS DE INTERFACE (UI)
@@ -513,6 +522,10 @@ class UiService:
         with st.sidebar:
             st.markdown("""
             <style>
+                [data-testid="stSidebar"] {
+                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+                    border-right: 1px solid #ff66b3 !important;
+                }
                 .sidebar-header {
                     text-align: center; 
                     margin-bottom: 20px;
