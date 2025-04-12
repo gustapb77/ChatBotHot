@@ -16,7 +16,7 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE PRESERVADA
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE PRESERVADA (NÃO ALTERADA)
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
@@ -64,7 +64,7 @@ class Persona:
 class DatabaseService:
     @staticmethod
     def init_db():
-        conn = sqlite3.connect('chat_history.db', check_same_thread=False)
+        conn = sqlite3.connect('chat_history.db', check_same_thread=False, timeout=10)  # ATUALIZAÇÃO 01: Timeout adicionado
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS conversations
                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -207,7 +207,6 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
         UiService.back_to_chat_button(extra_margin_top=40)
 
     @staticmethod
@@ -232,7 +231,6 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        # ATUALIZAÇÃO003 - Countdown Funcional (INÍCIO)
         st.markdown("""
         <style>
             #dynamic-countdown {
@@ -287,7 +285,6 @@ class NewPages:
             updateCountdown();
         </script>
         """, unsafe_allow_html=True)
-        # ATUALIZAÇÃO003 - Countdown Funcional (FIM)
 
         plans = [
             {
@@ -344,80 +341,69 @@ class NewPages:
                 </div>
                 """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
         UiService.back_to_chat_button(extra_margin_top=40)
 
 # ======================
 # SERVIÇOS DE INTERFACE (UI)
 # ======================
 class UiService:
-    # ATUALIZAÇÃO001 - Botões Responsivos (INÍCIO)
+    # ATUALIZAÇÃO 02 - BOTÕES DE ATALHO CORRIGIDOS
     @staticmethod
     def chat_shortcuts():
         st.markdown("""
         <style>
-            .chat-shortcuts-container {
-                display: flex;
-                overflow-x: auto;
-                gap: 8px;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .chat-shortcuts-container::-webkit-scrollbar {
-                display: none;
-            }
+            /* [ATUALIZAÇÃO 02] - CORREÇÃO DE CORES MOBILE/DESKTOP */
             .chat-shortcut-btn {
-                flex: 0 0 auto;
-                width: 23%;
-                min-width: 80px !important;
-                white-space: nowrap;
-                padding: 8px 5px !important;
-                background: rgba(255, 102, 179, 0.15) !important;
+                color: white !important;
                 border: 1px solid #ff66b3 !important;
+                background: rgba(255, 102, 179, 0.15) !important;
                 border-radius: 8px !important;
                 transition: all 0.3s !important;
-                text-align: center;
-                cursor: pointer;
             }
             .chat-shortcut-btn:hover {
                 background: rgba(255, 102, 179, 0.3) !important;
             }
-            @media (hover: none) {
-                .chat-shortcut-btn:active {
-                    transform: scale(0.95);
+            @media (max-width: 768px) {
+                .chat-shortcut-btn {
+                    padding: 8px 5px !important;
+                    font-size: 14px !important;
                 }
             }
         </style>
-
-        <div class="chat-shortcuts-container">
-            <button class="chat-shortcut-btn" onclick="window.location.hash='home'">🏠 Início</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='gallery'">📸 Galeria</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='offers'">🎁 Ofertas</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='vip'">💎 VIP</button>
-        </div>
         """, unsafe_allow_html=True)
-    # ATUALIZAÇÃO001 - Botões Responsivos (FIM)
 
-    # ATUALIZAÇÃO002 - Botão Voltar ao Chat (INÍCIO)
+        cols = st.columns(4)
+        shortcuts = [
+            ("🏠 Início", "home"),
+            ("📸 Galeria", "gallery"),
+            ("🎁 Ofertas", "offers"),
+            ("💎 VIP", "vip")
+        ]
+        
+        for (label, page), col in zip(shortcuts, cols):
+            with col:
+                if st.button(
+                    label,
+                    key=f"shortcut_{page}",
+                    use_container_width=True,
+                    on_click=lambda p=page: setattr(st.session_state, 'current_page', p)
+                ):
+                    st.rerun()
+
+    # ATUALIZAÇÃO 01 - BOTÃO VOLTAR AO CHAT REFATORADO
     @staticmethod
     def back_to_chat_button(extra_margin_top: int = 20):
-        st.markdown(f"""
-        <div style="margin-top: {extra_margin_top}px; text-align: center;">
-            <button onclick="window.location.hash='chat'" style="
-                background: linear-gradient(45deg, #ff66b3, #ff1493);
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 20px;
-                cursor: pointer;
-                font-size: 14px;
-            ">
-                ← Voltar ao Chat
-            </button>
-        </div>
-        """, unsafe_allow_html=True)
-    # ATUALIZAÇÃO002 - Botão Voltar ao Chat (FIM)
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button(
+                "← Voltar ao Chat",
+                key=f"back_chat_{random.randint(0,1000)}",
+                use_container_width=True,
+                type="primary"
+            ):
+                st.session_state.current_page = "chat"
+                st.rerun()
+        st.markdown(f"<div style='margin-top: {extra_margin_top}px'></div>", unsafe_allow_html=True)
 
     @staticmethod
     def get_chat_audio_player():
@@ -772,7 +758,6 @@ class UiService:
         </div>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
         UiService.back_to_chat_button()
 
     @staticmethod
@@ -800,7 +785,7 @@ class UiService:
         </style>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO001 - Botões de Atalho
+        # ATUALIZAÇÃO 02 IMPLEMENTADA AQUI
         UiService.chat_shortcuts()
         
         st.markdown(f"""
@@ -854,7 +839,8 @@ class ChatService:
                 "request_count": 0,
                 "current_page": "home",
                 "show_vip_offer": False,
-                "audio_sent": False
+                "audio_sent": False,
+                "back_to_chat": False  # ATUALIZAÇÃO 01 - CONTROLE DE NAVEGAÇÃO
             })
 
     @staticmethod
@@ -993,10 +979,17 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    st.title("💋 Paloma - Conteúdo Exclusivo")
-    conn = DatabaseService.init_db()
+    # ATUALIZAÇÃO 01 - INICIALIZAÇÃO DE ESTADO
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "home"
     
+    # ATUALIZAÇÃO 02 - SINCRONIZAÇÃO DE PÁGINA
+    if st.experimental_get_query_params().get("page"):
+        st.session_state.current_page = st.experimental_get_query_params()["page"][0]
+    
+    conn = DatabaseService.init_db()
     ChatService.initialize_session()
+    
     if not st.session_state.age_verified:
         UiService.age_verification()
         st.stop()
@@ -1028,6 +1021,7 @@ def main():
                 st.rerun()
         st.stop()
     
+    # ATUALIZAÇÃO 01 - SISTEMA DE NAVEGAÇÃO
     if st.session_state.current_page == "home":
         NewPages.show_home_page()
     elif st.session_state.current_page == "gallery":
