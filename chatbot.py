@@ -206,32 +206,8 @@ class NewPages:
 
     @staticmethod
     def show_offers_page():
-        st.title("🎁 Ofertas Especiais")
         st.markdown("""
         <style>
-            .offer-card {
-                border: 1px solid #ff66b3;
-                border-radius: 15px;
-                padding: 20px;
-                margin-bottom: 20px;
-                background: rgba(30, 0, 51, 0.3);
-            }
-            .offer-highlight {
-                background: linear-gradient(45deg, #ff0066, #ff66b3);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-            .countdown-container {
-                background: linear-gradient(45deg, #ff0066, #ff66b3);
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin-bottom: 30px;
-                box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
-                text-align: center;
-            }
             .package-container {
                 display: flex;
                 justify-content: space-between;
@@ -302,48 +278,35 @@ class NewPages:
                 width: 100px;
                 text-align: center;
             }
+            .countdown-container {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 40px 0;
+                box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+                text-align: center;
+            }
+            .offer-card {
+                border: 1px solid #ff66b3;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: rgba(30, 0, 51, 0.3);
+            }
+            .offer-highlight {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
         </style>
         """, unsafe_allow_html=True)
 
-        # Container do temporizador
+        # ============= SEÇÃO DE PACOTES (PRIMEIRO) =============
         st.markdown("""
-        <div class="countdown-container">
-            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
-            <p style="margin:5px 0 0;">Termina em breve!</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # JavaScript para o countdown
-        st.components.v1.html("""
-        <script>
-        function updateCountdown() {
-            const countdownElement = parent.document.getElementById('countdown');
-            if (!countdownElement) return;
-            
-            let time = countdownElement.textContent.split(':');
-            let hours = parseInt(time[0]);
-            let minutes = parseInt(time[1]);
-            let seconds = parseInt(time[2]);
-            
-            seconds--;
-            if (seconds < 0) { seconds = 59; minutes--; }
-            if (minutes < 0) { minutes = 59; hours--; }
-            if (hours < 0) { hours = 23; }
-            
-            countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            setTimeout(updateCountdown, 1000);
-        }
-        
-        setTimeout(updateCountdown, 1000);
-        </script>
-        """, height=0)
-
-        # ============= NOVA SEÇÃO DE PACOTES =============
-        st.markdown("""
-        <div style="text-align: center; margin: 40px 0;">
+        <div style="text-align: center; margin-bottom: 30px;">
             <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
             <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
         </div>
@@ -464,10 +427,45 @@ class NewPages:
         </div>
         """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)  # Fecha container
-        st.markdown("---")
+        st.markdown('</div>', unsafe_allow_html=True)  # Fecha container de pacotes
 
-        # Seção original de planos (mantida intacta)
+        # ============= TEMPORIZADOR (SEGUNDA SEÇÃO) =============
+        st.markdown("""
+        <div class="countdown-container">
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # JavaScript para o countdown
+        st.components.v1.html("""
+        <script>
+        function updateCountdown() {
+            const countdownElement = parent.document.getElementById('countdown');
+            if (!countdownElement) return;
+            
+            let time = countdownElement.textContent.split(':');
+            let hours = parseInt(time[0]);
+            let minutes = parseInt(time[1]);
+            let seconds = parseInt(time[2]);
+            
+            seconds--;
+            if (seconds < 0) { seconds = 59; minutes--; }
+            if (minutes < 0) { minutes = 59; hours--; }
+            if (hours < 0) { hours = 23; }
+            
+            countdownElement.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            setTimeout(updateCountdown, 1000);
+        }
+        
+        setTimeout(updateCountdown, 1000);
+        </script>
+        """, height=0)
+
+        # ============= PLANOS VIP (TERCEIRA SEÇÃO) =============
         plans = [
             {
                 "name": "1 Mês",
