@@ -177,7 +177,7 @@ class NewPages:
         
         for col, img in zip(cols, preview_images):
             with col:
-                st.image(img, use_column_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
         # Chamada para ação
@@ -642,7 +642,7 @@ class UiService:
             with col:
                 st.image(
                     gallery_images[idx],
-                    use_column_width=True,
+                    use_container_width=True,
                     caption=f"Preview {idx+1}"
                 )
                 st.markdown(f"""
