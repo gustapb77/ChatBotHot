@@ -170,9 +170,9 @@ class NewPages:
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
         preview_images = [
-            "https://i.imgur.com/placeholder1.jpg",
-            "https://i.imgur.com/placeholder2.jpg",
-            "https://i.imgur.com/placeholder3.jpg"
+            "https://i.ibb.co/k2MJg4XC/Save-Clip-App-412457343-378531441368078-7870326395110089440-n.jpg",
+            "https://i.ibb.co/MxqKBk1X/Save-Clip-App-481825770-18486618637042608-2702272791254832108-n.jpg",
+            "https://i.ibb.co/F4CkkYTL/Save-Clip-App-461241348-1219420546053727-2357827070610318448-n.jpg"
         ]
         
         for col, img in zip(cols, preview_images):
@@ -555,7 +555,7 @@ class UiService:
             
             st.markdown("""
             <div class="sidebar-header">
-                <img src="https://i.imgur.com/XYZ1234.png" alt="Paloma">
+                <img src="https://i.ibb.co/ks5CNrDn/IMG-9256.jpg" alt="Paloma">
                 <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
             """, unsafe_allow_html=True)
@@ -916,7 +916,7 @@ def main():
         with col2:
             st.markdown("""
             <div style="text-align: center; margin: 50px 0;">
-                <img src="https://i.imgur.com/XYZ1234.png" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
+                <img src="https://i.ibb.co/ks5CNrDn/IMG-9256.jpg" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
                 <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
