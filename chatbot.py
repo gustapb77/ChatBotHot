@@ -16,23 +16,13 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE PRESERVADA
-    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/main/assets/audio/paloma_audio.mp3"
+    AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
-
-# ======================
-# SEGURANÇA
-# ======================
-class Security:
-    @staticmethod
-    def sanitize_input(text: str) -> str:
-        """Remove scripts, SQL injection e limita tamanho"""
-        cleaned = re.sub(r'[<>"\';()&$]', '', text)
-        return cleaned[:300]
 
 # ======================
 # MODELOS DE DADOS
@@ -206,9 +196,6 @@ class NewPages:
             </a>
         </div>
         """, unsafe_allow_html=True)
-        
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
-        UiService.back_to_chat_button(extra_margin_top=40)
 
     @staticmethod
     def show_offers_page():
@@ -232,62 +219,39 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        # ATUALIZAÇÃO003 - Countdown Funcional (INÍCIO)
         st.markdown("""
-        <style>
-            #dynamic-countdown {
-                font-size: 1.8em;
-                font-weight: bold;
-                color: #ff1493;
-                animation: pulse 1.5s infinite;
-            }
-            @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.7; }
-                100% { opacity: 1; }
-            }
-            .offer-expired {
-                color: white !important;
-                background: #ff0000 !important;
-                padding: 10px;
-                border-radius: 5px;
-            }
-        </style>
-
-        <div style="text-align: center; margin: 25px 0;">
-            <h3 style="color: #ff1493; margin:0;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="dynamic-countdown"></div>
-            <p style="margin:5px 0 0; font-size:0.9em;">Termina em breve!</p>
+        <div style="
+            background: linear-gradient(45deg, #ff0066, #ff66b3);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+        ">
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
         </div>
-
+        
         <script>
-            const endTime = new Date();
-            endTime.setHours(endTime.getHours() + 24);
-
-            function updateCountdown() {
-                const now = new Date();
-                const diff = endTime - now;
+            function updateTimer() {
+                let timer = document.getElementById('countdown').textContent.split(':');
+                let hours = parseInt(timer[0]);
+                let minutes = parseInt(timer[1]);
+                let seconds = parseInt(timer[2]);
                 
-                if (diff <= 0) {
-                    document.getElementById("dynamic-countdown").innerHTML = 
-                        "⏰ OFERTA EXPIRADA!";
-                    document.getElementById("dynamic-countdown").className = "offer-expired";
-                    return;
-                }
+                seconds--;
+                if (seconds < 0) { seconds = 59; minutes--; }
+                if (minutes < 0) { minutes = 59; hours--; }
                 
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                
-                document.getElementById("dynamic-countdown").innerHTML = 
-                    `${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
-                
-                setTimeout(updateCountdown, 1000);
+                document.getElementById('countdown').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                setTimeout(updateTimer, 1000);
             }
-            updateCountdown();
+            updateTimer();
         </script>
         """, unsafe_allow_html=True)
-        # ATUALIZAÇÃO003 - Countdown Funcional (FIM)
 
         plans = [
             {
@@ -343,82 +307,11 @@ class NewPages:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-        
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
-        UiService.back_to_chat_button(extra_margin_top=40)
 
 # ======================
 # SERVIÇOS DE INTERFACE (UI)
 # ======================
 class UiService:
-    # ATUALIZAÇÃO001 - Botões Responsivos (INÍCIO)
-    @staticmethod
-    def chat_shortcuts():
-        st.markdown("""
-        <style>
-            .chat-shortcuts-container {
-                display: flex;
-                overflow-x: auto;
-                gap: 8px;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .chat-shortcuts-container::-webkit-scrollbar {
-                display: none;
-            }
-            .chat-shortcut-btn {
-                flex: 0 0 auto;
-                width: 23%;
-                min-width: 80px !important;
-                white-space: nowrap;
-                padding: 8px 5px !important;
-                background: rgba(255, 102, 179, 0.15) !important;
-                border: 1px solid #ff66b3 !important;
-                border-radius: 8px !important;
-                transition: all 0.3s !important;
-                text-align: center;
-                cursor: pointer;
-            }
-            .chat-shortcut-btn:hover {
-                background: rgba(255, 102, 179, 0.3) !important;
-            }
-            @media (hover: none) {
-                .chat-shortcut-btn:active {
-                    transform: scale(0.95);
-                }
-            }
-        </style>
-
-        <div class="chat-shortcuts-container">
-            <button class="chat-shortcut-btn" onclick="window.location.hash='home'">🏠 Início</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='gallery'">📸 Galeria</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='offers'">🎁 Ofertas</button>
-            <button class="chat-shortcut-btn" onclick="window.location.hash='vip'">💎 VIP</button>
-        </div>
-        """, unsafe_allow_html=True)
-    # ATUALIZAÇÃO001 - Botões Responsivos (FIM)
-
-    # ATUALIZAÇÃO002 - Botão Voltar ao Chat (INÍCIO)
-    @staticmethod
-    def back_to_chat_button(extra_margin_top: int = 20):
-        st.markdown(f"""
-        <div style="margin-top: {extra_margin_top}px; text-align: center;">
-            <button onclick="window.location.hash='chat'" style="
-                background: linear-gradient(45deg, #ff66b3, #ff1493);
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 20px;
-                cursor: pointer;
-                font-size: 14px;
-            ">
-                ← Voltar ao Chat
-            </button>
-        </div>
-        """, unsafe_allow_html=True)
-    # ATUALIZAÇÃO002 - Botão Voltar ao Chat (FIM)
-
     @staticmethod
     def get_chat_audio_player():
         return f"""
@@ -772,8 +665,72 @@ class UiService:
         </div>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO002 - Botão Voltar ao Chat
-        UiService.back_to_chat_button()
+        if st.button("← Voltar ao chat", key="back_from_gallery"):
+            st.session_state.current_page = "chat"
+            st.rerun()
+
+    @staticmethod
+    def chat_shortcuts():
+        """Barra de atalhos profissionais para o chat"""
+        st.markdown("""
+        <style>
+            .chat-shortcuts {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+            }
+            .chat-shortcut-btn {
+                flex: 1;
+                min-width: 100px;
+                background: rgba(255, 102, 179, 0.15) !important;
+                border: 1px solid #ff66b3 !important;
+                border-radius: 8px !important;
+                transition: all 0.3s !important;
+                padding: 8px 5px !important;
+            }
+            .chat-shortcut-btn:hover {
+                background: rgba(255, 102, 179, 0.3) !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 2px 8px rgba(255, 102, 179, 0.2) !important;
+            }
+            .chat-shortcut-btn:active {
+                transform: translateY(0) !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        with st.container():
+            cols = st.columns(4)
+            
+            with cols[0]:
+                if st.button("🏠 Início", 
+                           key="chat_shortcut_home",
+                           help="Voltar para a página inicial"):
+                    st.session_state.current_page = "home"
+                    st.rerun()
+            
+            with cols[1]:
+                if st.button("📸 Galeria", 
+                           key="chat_shortcut_gallery",
+                           help="Acessar galeria exclusiva"):
+                    st.session_state.current_page = "gallery"
+                    st.rerun()
+            
+            with cols[2]:
+                if st.button("🎁 Ofertas", 
+                           key="chat_shortcut_offers",
+                           help="Ver ofertas especiais"):
+                    st.session_state.current_page = "offers"
+                    st.rerun()
+            
+            with cols[3]:
+                if st.button("💎 VIP", 
+                           key="chat_shortcut_vip",
+                           help="Área exclusiva para assinantes"):
+                    st.session_state.current_page = "offers"
+                    st.rerun()
 
     @staticmethod
     def enhanced_chat_ui(conn):
@@ -800,7 +757,7 @@ class UiService:
         </style>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO001 - Botões de Atalho
+        # Adicionando a barra de atalhos
         UiService.chat_shortcuts()
         
         st.markdown(f"""
@@ -893,7 +850,8 @@ class ChatService:
 
     @staticmethod
     def validate_input(user_input):
-        return Security.sanitize_input(user_input)
+        cleaned_input = re.sub(r'<[^>]*>', '', user_input)
+        return cleaned_input[:500]
 
     @staticmethod
     def process_user_input(conn):
