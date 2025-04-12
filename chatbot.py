@@ -16,16 +16,16 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # SUA CHAVE ORIGINAL (preservada)
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
-    AUDIO_DURATION = 7  # Segundos do áudio
+    AUDIO_DURATION = 7
 
 # ======================
-# MODELOS DE DADOS (mantido original)
+# MODELOS DE DADOS
 # ======================
 class Persona:
     PALOMA = """
@@ -49,7 +49,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (mantido original)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -76,7 +76,7 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
 # ======================
-# SERVIÇOS DE API (mantido original)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -120,7 +120,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# NOVAS PÁGINAS ADICIONADAS (mantido original)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -147,7 +147,6 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        # Banner principal
         st.markdown("""
         <div class="hero-banner">
             <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
@@ -166,7 +165,6 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        # Mini-galeria
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
         preview_images = [
@@ -180,7 +178,6 @@ class NewPages:
                 st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
-        # Chamada para ação
         st.markdown("---")
         st.markdown(f"""
         <div style="text-align: center;">
@@ -222,7 +219,6 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        # Timer de oferta (fake)
         st.markdown("""
         <div style="
             background: linear-gradient(45deg, #ff0066, #ff66b3);
@@ -257,7 +253,6 @@ class NewPages:
         </script>
         """, unsafe_allow_html=True)
 
-        # Planos VIP
         plans = [
             {
                 "name": "1 Mês",
@@ -314,12 +309,11 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI) (atualizado para áudio no fluxo)
+# SERVIÇOS DE INTERFACE (UI)
 # ======================
 class UiService:
     @staticmethod
     def get_chat_audio_player():
-        """Player de áudio estilizado para o fluxo de mensagens"""
         return f"""
         <div style="
             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -339,8 +333,6 @@ class UiService:
         ATENDIDA_DELAY = 3
 
         call_container = st.empty()
-
-        # Fase 1: Ligando
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -371,8 +363,6 @@ class UiService:
         """, unsafe_allow_html=True)
         
         time.sleep(LIGANDO_DELAY)
-
-        # Fase 2: Atendida
         call_container.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e0033, #3c0066);
@@ -680,6 +670,69 @@ class UiService:
             st.rerun()
 
     @staticmethod
+    def chat_shortcuts():
+        """Barra de atalhos profissionais para o chat"""
+        st.markdown("""
+        <style>
+            .chat-shortcuts {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+            }
+            .chat-shortcut-btn {
+                flex: 1;
+                min-width: 100px;
+                background: rgba(255, 102, 179, 0.15) !important;
+                border: 1px solid #ff66b3 !important;
+                border-radius: 8px !important;
+                transition: all 0.3s !important;
+                padding: 8px 5px !important;
+            }
+            .chat-shortcut-btn:hover {
+                background: rgba(255, 102, 179, 0.3) !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 2px 8px rgba(255, 102, 179, 0.2) !important;
+            }
+            .chat-shortcut-btn:active {
+                transform: translateY(0) !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        with st.container():
+            cols = st.columns(4)
+            
+            with cols[0]:
+                if st.button("🏠 Início", 
+                           key="chat_shortcut_home",
+                           help="Voltar para a página inicial"):
+                    st.session_state.current_page = "home"
+                    st.rerun()
+            
+            with cols[1]:
+                if st.button("📸 Galeria", 
+                           key="chat_shortcut_gallery",
+                           help="Acessar galeria exclusiva"):
+                    st.session_state.current_page = "gallery"
+                    st.rerun()
+            
+            with cols[2]:
+                if st.button("🎁 Ofertas", 
+                           key="chat_shortcut_offers",
+                           help="Ver ofertas especiais"):
+                    st.session_state.current_page = "offers"
+                    st.rerun()
+            
+            with cols[3]:
+                if st.button("💎 VIP", 
+                           key="chat_shortcut_vip",
+                           help="Área exclusiva para assinantes"):
+                    st.session_state.current_page = "offers"
+                    st.rerun()
+
+    @staticmethod
     def enhanced_chat_ui(conn):
         st.markdown("""
         <style>
@@ -703,6 +756,9 @@ class UiService:
             }
         </style>
         """, unsafe_allow_html=True)
+        
+        # Adicionando a barra de atalhos
+        UiService.chat_shortcuts()
         
         st.markdown(f"""
         <div class="chat-header">
@@ -740,7 +796,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (atualizado para áudio no fluxo)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -801,7 +857,6 @@ class ChatService:
     def process_user_input(conn):
         ChatService.display_chat_history()
         
-        # Envio do áudio inicial
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
             UiService.show_audio_recording_effect(status_container)
