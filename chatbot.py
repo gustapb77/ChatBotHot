@@ -893,63 +893,54 @@ class UiService:
 
     @staticmethod
     def chat_shortcuts():
-        """Barra de atalhos otimizada para mobile e desktop - Versão corrigida"""
+        """Barra de atalhos funcional com texto branco"""
+        cols = st.columns(4)
+        with cols[0]:
+            if st.button("🏠 Início", key="shortcut_home", 
+                       help="Voltar para a página inicial",
+                       use_container_width=True):
+                st.session_state.current_page = "home"
+                st.rerun()
+        with cols[1]:
+            if st.button("📸 Galeria", key="shortcut_gallery",
+                       help="Acessar galeria privada",
+                       use_container_width=True):
+                st.session_state.current_page = "gallery"
+                st.rerun()
+        with cols[2]:
+            if st.button("🎁 Ofertas", key="shortcut_offers",
+                       help="Ver ofertas especiais",
+                       use_container_width=True):
+                st.session_state.current_page = "offers"
+                st.rerun()
+        with cols[3]:
+            if st.button("💎 VIP", key="shortcut_vip",
+                       help="Acessar área VIP",
+                       use_container_width=True):
+                st.session_state.current_page = "vip"
+                st.rerun()
+
+        # CSS para estilização
         st.markdown("""
         <style>
-            /* Container principal usando CSS Grid */
-            .shortcuts-container {
-                display: grid;
-                grid-template-columns: repeat(4, minmax(70px, 1fr));
-                gap: 8px;
-                margin-bottom: 15px;
-            }
-            
-            /* Botões responsivos */
-            .shortcut-btn {
-                min-width: 0;
-                padding: 8px 4px !important;
-                font-size: 0.8rem !important;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                border-radius: 8px !important;
+            div[data-testid="stHorizontalBlock"] > div > div > button {
+                color: white !important;
                 border: 1px solid #ff66b3 !important;
                 background: rgba(255, 102, 179, 0.15) !important;
                 transition: all 0.3s !important;
-                color: white !important;  /* Texto branco */
+                font-size: 0.8rem !important;
             }
-            
-            /* Efeito hover */
-            .shortcut-btn:hover {
+            div[data-testid="stHorizontalBlock"] > div > div > button:hover {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 2px 8px rgba(255, 102, 179, 0.3) !important;
-                color: white !important;
             }
-            
-            /* Ajustes para telas muito pequenas */
             @media (max-width: 400px) {
-                .shortcut-btn {
+                div[data-testid="stHorizontalBlock"] > div > div > button {
                     font-size: 0.7rem !important;
                     padding: 6px 2px !important;
                 }
             }
         </style>
-        
-        <div class="shortcuts-container">
-            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'home'}))" class="shortcut-btn">🏠 Início</button>
-            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'gallery'}))" class="shortcut-btn">📸 Galeria</button>
-            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'offers'}))" class="shortcut-btn">🎁 Ofertas</button>
-            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'vip'}))" class="shortcut-btn">💎 VIP</button>
-        </div>
-        
-        <script>
-            // Captura os eventos de mudança de página
-            document.addEventListener('changePage', function(e) {
-                window.parent.document.querySelector('input[aria-label="chat_input"]').value = e.detail;
-                window.parent.document.querySelector('input[aria-label="chat_input"]').dispatchEvent(new Event('input'));
-                window.parent.document.querySelector('button[data-testid="baseButton-secondary"]').click();
-            });
-        </script>
         """, unsafe_allow_html=True)
 
     @staticmethod
@@ -1222,20 +1213,6 @@ def main():
             st.rerun()
     else:
         UiService.enhanced_chat_ui(conn)
-    
-    # Adicione este código JavaScript no final
-    st.components.v1.html("""
-    <script>
-        // Sistema de navegação entre páginas
-        document.addEventListener('DOMContentLoaded', function() {
-            window.addEventListener('message', function(event) {
-                if (event.data.type === 'changePage') {
-                    window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: event.data.page}));
-                }
-            });
-        });
-    </script>
-    """, height=0)
     
     conn.close()
 
