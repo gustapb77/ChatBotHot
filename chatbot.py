@@ -892,60 +892,53 @@ class UiService:
 
     @staticmethod
     def chat_shortcuts():
-        """Barra de atalhos profissionais para o chat - Versão otimizada para mobile"""
+        """Barra de atalhos otimizada para mobile e desktop - Versão 4.0"""
         st.markdown("""
         <style>
-            /* Garante que as colunas não quebrem linha */
-            div[data-testid="column"] {
-                flex: 1 1 22%;  /* Ajuste fino para 4 colunas */
-                min-width: 0px;  /* Permite que as colunas encolham */
-                padding: 0 4px;  /* Espaçamento reduzido */
+            /* Container principal usando CSS Grid */
+            .shortcuts-container {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(70px, 1fr));
+                gap: 8px;
+                margin-bottom: 15px;
             }
             
-            /* Botões compactos para mobile */
-            @media (max-width: 768px) {
-                div.stButton > button {
-                    padding: 8px 4px !important;
-                    font-size: 0.75rem !important;
+            /* Botões responsivos */
+            .shortcut-btn {
+                min-width: 0;
+                padding: 8px 4px !important;
+                font-size: 0.8rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                border-radius: 8px !important;
+                border: 1px solid #ff66b3 !important;
+                background: rgba(255, 102, 179, 0.15) !important;
+                transition: all 0.3s !important;
+            }
+            
+            /* Efeito hover */
+            .shortcut-btn:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 2px 8px rgba(255, 102, 179, 0.3) !important;
+            }
+            
+            /* Ajustes para telas muito pequenas */
+            @media (max-width: 400px) {
+                .shortcut-btn {
+                    font-size: 0.7rem !important;
+                    padding: 6px 2px !important;
                 }
             }
-            
-            /* Efeito hover suave */
-            div.stButton > button:hover {
-                transform: translateY(-1px) !important;
-                box-shadow: 0 2px 6px rgba(255, 102, 179, 0.3) !important;
-            }
         </style>
+        
+        <div class="shortcuts-container">
+            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Home\']').click()" class="shortcut-btn">🏠 Início</button>
+            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Galeria\']').click()" class="shortcut-btn">📸 Galeria</button>
+            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Ofertas\']').click()" class="shortcut-btn">🎁 Ofertas</button>
+            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'VIP\']').click()" class="shortcut-btn">💎 VIP</button>
+        </div>
         """, unsafe_allow_html=True)
-        
-        cols = st.columns(4)
-        with cols[0]:
-            if st.button("🏠 Início", 
-                        key="chat_shortcut_home",
-                        help="Voltar para a página inicial"):
-                st.session_state.current_page = "home"
-                st.rerun()
-        
-        with cols[1]:
-            if st.button("📸 Galeria", 
-                        key="chat_shortcut_gallery",
-                        help="Acessar galeria exclusiva"):
-                st.session_state.current_page = "gallery"
-                st.rerun()
-        
-        with cols[2]:
-            if st.button("🎁 Ofertas", 
-                        key="chat_shortcut_offers",
-                        help="Ver ofertas especiais"):
-                st.session_state.current_page = "offers"
-                st.rerun()
-        
-        with cols[3]:
-            if st.button("💎 VIP", 
-                        key="chat_shortcut_vip",
-                        help="Área exclusiva para assinantes"):
-                st.session_state.current_page = "offers"
-                st.rerun()
 
     @staticmethod
     def enhanced_chat_ui(conn):
