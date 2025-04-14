@@ -818,7 +818,8 @@ class UiService:
             """, unsafe_allow_html=True)
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
-                st.session_state.show_vip_offer = True
+                st.session_state.current_page = "vip"
+                st.rerun()
             
             st.markdown("---")
             st.markdown("""
@@ -892,7 +893,7 @@ class UiService:
 
     @staticmethod
     def chat_shortcuts():
-        """Barra de atalhos otimizada para mobile e desktop - Versão 4.0"""
+        """Barra de atalhos otimizada para mobile e desktop - Versão corrigida"""
         st.markdown("""
         <style>
             /* Container principal usando CSS Grid */
@@ -915,12 +916,14 @@ class UiService:
                 border: 1px solid #ff66b3 !important;
                 background: rgba(255, 102, 179, 0.15) !important;
                 transition: all 0.3s !important;
+                color: white !important;  /* Texto branco */
             }
             
             /* Efeito hover */
             .shortcut-btn:hover {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 2px 8px rgba(255, 102, 179, 0.3) !important;
+                color: white !important;
             }
             
             /* Ajustes para telas muito pequenas */
@@ -933,11 +936,20 @@ class UiService:
         </style>
         
         <div class="shortcuts-container">
-            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Home\']').click()" class="shortcut-btn">🏠 Início</button>
-            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Galeria\']').click()" class="shortcut-btn">📸 Galeria</button>
-            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'Ofertas\']').click()" class="shortcut-btn">🎁 Ofertas</button>
-            <button onclick="window.parent.document.querySelector('button[data-testid=\'baseButton-secondary\'][title=\'VIP\']').click()" class="shortcut-btn">💎 VIP</button>
+            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'home'}))" class="shortcut-btn">🏠 Início</button>
+            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'gallery'}))" class="shortcut-btn">📸 Galeria</button>
+            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'offers'}))" class="shortcut-btn">🎁 Ofertas</button>
+            <button onclick="window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: 'vip'}))" class="shortcut-btn">💎 VIP</button>
         </div>
+        
+        <script>
+            // Captura os eventos de mudança de página
+            document.addEventListener('changePage', function(e) {
+                window.parent.document.querySelector('input[aria-label="chat_input"]').value = e.detail;
+                window.parent.document.querySelector('input[aria-label="chat_input"]').dispatchEvent(new Event('input'));
+                window.parent.document.querySelector('button[data-testid="baseButton-secondary"]').click();
+            });
+        </script>
         """, unsafe_allow_html=True)
 
     @staticmethod
@@ -1200,6 +1212,9 @@ def main():
         UiService.show_gallery_page(conn)
     elif st.session_state.current_page == "offers":
         NewPages.show_offers_page()
+    elif st.session_state.current_page == "vip":
+        st.session_state.show_vip_offer = True
+        st.rerun()
     elif st.session_state.get("show_vip_offer", False):
         st.warning("Página VIP em desenvolvimento")
         if st.button("← Voltar ao chat"):
@@ -1207,6 +1222,20 @@ def main():
             st.rerun()
     else:
         UiService.enhanced_chat_ui(conn)
+    
+    # Adicione este código JavaScript no final
+    st.components.v1.html("""
+    <script>
+        // Sistema de navegação entre páginas
+        document.addEventListener('DOMContentLoaded', function() {
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'changePage') {
+                    window.parent.document.dispatchEvent(new CustomEvent('changePage', {detail: event.data.page}));
+                }
+            });
+        });
+    </script>
+    """, height=0)
     
     conn.close()
 
