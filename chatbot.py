@@ -9,6 +9,7 @@ import random
 import sqlite3
 import re
 import os
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -28,7 +29,86 @@ class Config:
     AUDIO_DURATION = 7
 
 # ======================
-# MODELOS DE DADOS
+# PERSISTÊNCIA DE ESTADO (NOVO)
+# ======================
+class PersistentState:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.init_db()
+        return cls._instance
+    
+    def init_db(self):
+        self.conn = sqlite3.connect('persistent_state.db', check_same_thread=False)
+        self.create_tables()
+    
+    def create_tables(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS global_state (
+                user_id TEXT PRIMARY KEY,
+                session_data TEXT NOT NULL,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self.conn.commit()
+
+    def save_state(self, user_id, data):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO global_state (user_id, session_data)
+            VALUES (?, ?)
+        ''', (user_id, json.dumps(data)))
+        self.conn.commit()
+    
+    def load_state(self, user_id):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT session_data FROM global_state WHERE user_id = ?', (user_id,))
+        result = cursor.fetchone()
+        return json.loads(result[0]) if result else None
+
+def get_user_id():
+    if 'user_id' not in st.session_state:
+        user_id = st.experimental_get_query_params().get('uid', [None])[0]
+        if not user_id:
+            user_id = str(uuid.uuid4())
+            st.experimental_set_query_params(uid=user_id)
+        st.session_state.user_id = user_id
+    return st.session_state.user_id
+
+def load_persistent_data():
+    user_id = get_user_id()
+    db = PersistentState()
+    saved_data = db.load_state(user_id) or {}
+    
+    # Mescla dados salvos com session_state sem sobrescrever valores ativos
+    for key, value in saved_data.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+def save_persistent_data():
+    user_id = get_user_id()
+    db = PersistentState()
+    
+    # Dados que queremos persistir
+    persistent_keys = [
+        'age_verified', 'messages', 'request_count',
+        'connection_complete', 'chat_started', 'audio_sent',
+        'current_page', 'show_vip_offer', 'session_id'
+    ]
+    
+    data_to_save = {
+        key: st.session_state.get(key)
+        for key in persistent_keys
+        if key in st.session_state
+    }
+    
+    db.save_state(user_id, data_to_save)
+
+# ======================
+# MODELOS DE DADOS (ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
@@ -52,7 +132,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (ATUALIZADO)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -61,6 +141,7 @@ class DatabaseService:
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS conversations
                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     user_id TEXT,
                      session_id TEXT,
                      timestamp DATETIME,
                      role TEXT,
@@ -69,25 +150,37 @@ class DatabaseService:
         return conn
 
     @staticmethod
-    def save_message(conn, session_id, role, content):
+    def save_message(conn, user_id, session_id, role, content):
         try:
             c = conn.cursor()
-            c.execute("INSERT INTO conversations (session_id, timestamp, role, content) VALUES (?, ?, ?, ?)",
-                     (session_id, datetime.now(), role, content))
+            c.execute("""
+                INSERT INTO conversations (user_id, session_id, timestamp, role, content)
+                VALUES (?, ?, ?, ?, ?)
+            """, (user_id, session_id, datetime.now(), role, content))
             conn.commit()
         except sqlite3.Error as e:
             st.error(f"Erro ao salvar mensagem: {e}")
 
+    @staticmethod
+    def load_messages(conn, user_id, session_id):
+        c = conn.cursor()
+        c.execute("""
+            SELECT role, content FROM conversations 
+            WHERE user_id = ? AND session_id = ?
+            ORDER BY timestamp
+        """, (user_id, session_id))
+        return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
+
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
-            DatabaseService.save_message(conn, session_id, "user", prompt)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
-            DatabaseService.save_message(conn, session_id, "assistant", resposta)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
         headers = {'Content-Type': 'application/json'}
@@ -111,8 +204,8 @@ class ApiService:
             if random.random() > 0.7:
                 resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
             
-            DatabaseService.save_message(conn, session_id, "user", prompt)
-            DatabaseService.save_message(conn, session_id, "assistant", resposta)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
         except requests.exceptions.RequestException as e:
@@ -123,7 +216,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# PÁGINAS
+# PÁGINAS (ORIGINAL)
 # ======================
 class NewPages:
     @staticmethod
@@ -171,9 +264,9 @@ class NewPages:
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
         preview_images = [
-            "https://i.ibb.co/k2MJg4XC/Save-Clip-App-412457343-378531441368078-7870326395110089440-n.jpg",
-            "https://i.ibb.co/MxqKBk1X/Save-Clip-App-481825770-18486618637042608-2702272791254832108-n.jpg",
-            "https://i.ibb.co/F4CkkYTL/Save-Clip-App-461241348-1219420546053727-2357827070610318448-n.jpg"
+            "https://i.ibb.co/k2MJg4XC/Save-ClipApp-412457343-378531441368078-7870326395110089440-n.jpg",
+            "https://i.ibb.co/MxqKBk1X/Save-ClipApp-481825770-18486618637042608-2702272791254832108-n.jpg",
+            "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
         ]
         
         for col, img in zip(cols, preview_images):
@@ -526,7 +619,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI)
+# SERVIÇOS DE INTERFACE (UI) (ATUALIZADO)
 # ======================
 class UiService:
     @staticmethod
@@ -723,6 +816,7 @@ class UiService:
                         use_container_width=True,
                         type="primary"):
                 st.session_state.age_verified = True
+                save_persistent_data()  # <-- Novo: Salva estado imediatamente
                 st.rerun()
 
     @staticmethod
@@ -784,6 +878,7 @@ class UiService:
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
                     st.session_state.current_page = page
+                    save_persistent_data()  # <-- Novo: Salva ao mudar de página
                     st.rerun()
             
             st.markdown("---")
@@ -819,6 +914,7 @@ class UiService:
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
                 st.session_state.current_page = "vip"
+                save_persistent_data()  # <-- Novo: Salva ao clicar
                 st.rerun()
             
             st.markdown("---")
@@ -889,6 +985,7 @@ class UiService:
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
+            save_persistent_data()  # <-- Novo: Salva ao voltar
             st.rerun()
 
     @staticmethod
@@ -900,24 +997,28 @@ class UiService:
                        help="Voltar para a página inicial",
                        use_container_width=True):
                 st.session_state.current_page = "home"
+                save_persistent_data()
                 st.rerun()
         with cols[1]:
             if st.button("📸 Galeria", key="shortcut_gallery",
                        help="Acessar galeria privada",
                        use_container_width=True):
                 st.session_state.current_page = "gallery"
+                save_persistent_data()
                 st.rerun()
         with cols[2]:
             if st.button("🎁 Ofertas", key="shortcut_offers",
                        help="Ver ofertas especiais",
                        use_container_width=True):
                 st.session_state.current_page = "offers"
+                save_persistent_data()
                 st.rerun()
         with cols[3]:
             if st.button("💎 VIP", key="shortcut_vip",
                        help="Acessar área VIP",
                        use_container_width=True):
                 st.session_state.current_page = "vip"
+                save_persistent_data()
                 st.rerun()
 
         # CSS para estilização
@@ -993,6 +1094,7 @@ class UiService:
         """, unsafe_allow_html=True)
         
         ChatService.process_user_input(conn)
+        save_persistent_data()  # <-- Novo: Auto-salva após interação
         
         st.markdown("""
         <div style="
@@ -1007,23 +1109,42 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
-    def initialize_session():
-        if "age_verified" not in st.session_state:
-            st.session_state.update({
-                "age_verified": False,
-                "connection_complete": False,
-                "chat_started": False,
-                "messages": [],
-                "session_id": str(random.randint(100000, 999999)),
-                "request_count": 0,
-                "current_page": "home",
-                "show_vip_offer": False,
-                "audio_sent": False
-            })
+    def initialize_session(conn):
+        load_persistent_data()  # <-- Carrega dados persistentes
+        
+        if "session_id" not in st.session_state:
+            st.session_state.session_id = str(random.randint(100000, 999999))
+        
+        if "messages" not in st.session_state:
+            st.session_state.messages = DatabaseService.load_messages(
+                conn,
+                get_user_id(),
+                st.session_state.session_id
+            )
+        
+        if "request_count" not in st.session_state:
+            st.session_state.request_count = len([
+                m for m in st.session_state.messages 
+                if m["role"] == "user"
+            ])
+        
+        # Garante que os estados essenciais existam
+        defaults = {
+            'age_verified': False,
+            'connection_complete': False,
+            'chat_started': False,
+            'audio_sent': False,
+            'current_page': 'home',
+            'show_vip_offer': False
+        }
+        
+        for key, default in defaults.items():
+            if key not in st.session_state:
+                st.session_state[key] = default
 
     @staticmethod
     def display_chat_history():
@@ -1076,7 +1197,15 @@ class ChatService:
                 "role": "assistant",
                 "content": "[ÁUDIO]"
             })
+            DatabaseService.save_message(
+                conn,
+                get_user_id(),
+                st.session_state.session_id,
+                "assistant",
+                "[ÁUDIO]"
+            )
             st.session_state.audio_sent = True
+            save_persistent_data()
             st.rerun()
         
         user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
@@ -1089,6 +1218,14 @@ class ChatService:
                     "role": "assistant",
                     "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 })
+                DatabaseService.save_message(
+                    conn,
+                    get_user_id(),
+                    st.session_state.session_id,
+                    "assistant",
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                )
+                save_persistent_data()
                 st.rerun()
                 return
             
@@ -1096,6 +1233,14 @@ class ChatService:
                 "role": "user",
                 "content": cleaned_input
             })
+            DatabaseService.save_message(
+                conn,
+                get_user_id(),
+                st.session_state.session_id,
+                "user",
+                cleaned_input
+            )
+            
             st.session_state.request_count += 1
             
             with st.chat_message("user", avatar="🧑"):
@@ -1128,6 +1273,15 @@ class ChatService:
                 "role": "assistant",
                 "content": resposta
             })
+            DatabaseService.save_message(
+                conn,
+                get_user_id(),
+                st.session_state.session_id,
+                "assistant",
+                resposta
+            )
+            
+            save_persistent_data()  # <-- Salva após cada interação
             
             st.markdown("""
             <script>
@@ -1136,7 +1290,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (ATUALIZADA)
 # ======================
 def main():
     st.markdown("""
@@ -1162,21 +1316,34 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    st.title("💋 Paloma - Conteúdo Exclusivo")
-    conn = DatabaseService.init_db()
+    # Inicializa conexão com banco de dados
+    if 'db_conn' not in st.session_state:
+        st.session_state.db_conn = DatabaseService.init_db()
     
-    ChatService.initialize_session()
+    conn = st.session_state.db_conn
+    
+    # Configura título da página
+    st.title("💋 Paloma - Conteúdo Exclusivo")
+    
+    # Inicialização robusta da sessão
+    ChatService.initialize_session(conn)
+    
+    # Verificação de idade (persistente)
     if not st.session_state.age_verified:
         UiService.age_verification()
         st.stop()
     
+    # Configura sidebar
     UiService.setup_sidebar()
     
+    # Efeito de chamada (executa apenas uma vez)
     if not st.session_state.connection_complete:
         UiService.show_call_effect()
         st.session_state.connection_complete = True
+        save_persistent_data()
         st.rerun()
     
+    # Página inicial se chat não iniciado
     if not st.session_state.chat_started:
         col1, col2, col3 = st.columns([1,3,1])
         with col2:
@@ -1190,13 +1357,15 @@ def main():
             
             if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
                 st.session_state.update({
-                    "chat_started": True,
-                    "current_page": "chat",
-                    "audio_sent": False
+                    'chat_started': True,
+                    'current_page': 'chat',
+                    'audio_sent': False
                 })
+                save_persistent_data()
                 st.rerun()
         st.stop()
     
+    # Roteamento de páginas
     if st.session_state.current_page == "home":
         NewPages.show_home_page()
     elif st.session_state.current_page == "gallery":
@@ -1205,16 +1374,19 @@ def main():
         NewPages.show_offers_page()
     elif st.session_state.current_page == "vip":
         st.session_state.show_vip_offer = True
+        save_persistent_data()
         st.rerun()
     elif st.session_state.get("show_vip_offer", False):
         st.warning("Página VIP em desenvolvimento")
         if st.button("← Voltar ao chat"):
             st.session_state.show_vip_offer = False
+            save_persistent_data()
             st.rerun()
     else:
         UiService.enhanced_chat_ui(conn)
     
-    conn.close()
+    # Garante salvamento final
+    save_persistent_data()
 
 if __name__ == "__main__":
     main()
