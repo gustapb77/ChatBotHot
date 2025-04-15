@@ -14,22 +14,47 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
 # ======================
 class Config:
+    # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    
+    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
+    
+    # URLs de assinatura VIP (NOVO)
+    CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
+    CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
+    CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
+    
+    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
+    
+    # Imagens organizadas (NOVO)
+    IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
+    IMG_GALLERY = [
+        "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
+        "https://i.ibb.co/Y4B7CbXf/IMG-9202.jpg",
+        "https://i.ibb.co/Fqf0gPPq/IMG-9199.jpg"
+    ]
+    IMG_HOME_PREVIEWS = [
+        "https://i.ibb.co/k2MJg4XC/Save-ClipApp-412457343-378531441368078-7870326395110089440-n.jpg",
+        "https://i.ibb.co/MxqKBk1X/Save-ClipApp-481825770-18486618637042608-2702272791254832108-n.jpg",
+        "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
+    ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (NOVO)
+# PERSISTÊNCIA DE ESTADO (ORIGINAL)
 # ======================
 class PersistentState:
     _instance = None
@@ -71,10 +96,10 @@ class PersistentState:
 
 def get_user_id():
     if 'user_id' not in st.session_state:
-        user_id = st.query_params.get('uid', [None])[0]  # Alterado para st.query_params
+        user_id = st.query_params.get('uid', [None])[0]
         if not user_id:
             user_id = str(uuid.uuid4())
-            st.query_params['uid'] = user_id  # Alterado para st.query_params
+            st.query_params['uid'] = user_id
         st.session_state.user_id = user_id
     return st.session_state.user_id
 
@@ -83,7 +108,6 @@ def load_persistent_data():
     db = PersistentState()
     saved_data = db.load_state(user_id) or {}
     
-    # Mescla dados salvos com session_state sem sobrescrever valores ativos
     for key, value in saved_data.items():
         if key not in st.session_state:
             st.session_state[key] = value
@@ -92,7 +116,6 @@ def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
     
-    # Dados que queremos persistir
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
@@ -132,7 +155,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ATUALIZADO)
+# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -216,7 +239,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# PÁGINAS (ORIGINAL)
+# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
 # ======================
 class NewPages:
     @staticmethod
@@ -263,13 +286,8 @@ class NewPages:
 
         st.subheader("🔍 Prévia do Conteúdo VIP")
         cols = st.columns(3)
-        preview_images = [
-            "https://i.ibb.co/k2MJg4XC/Save-ClipApp-412457343-378531441368078-7870326395110089440-n.jpg",
-            "https://i.ibb.co/MxqKBk1X/Save-ClipApp-481825770-18486618637042608-2702272791254832108-n.jpg",
-            "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
-        ]
         
-        for col, img in zip(cols, preview_images):
+        for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
             with col:
                 st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
@@ -397,7 +415,6 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        # ============= SEÇÃO DE PACOTES (PRIMEIRO) =============
         st.markdown("""
         <div style="text-align: center; margin-bottom: 30px;">
             <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
@@ -405,10 +422,8 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        # Container dos pacotes
         st.markdown('<div class="package-container">', unsafe_allow_html=True)
         
-        # Pacote Start
         st.markdown("""
         <div class="package-box package-start">
             <div class="package-header">
@@ -443,7 +458,6 @@ class NewPages:
         </div>
         """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
 
-        # Pacote Premium
         st.markdown("""
         <div class="package-box package-premium">
             <div class="package-badge">POPULAR</div>
@@ -481,7 +495,6 @@ class NewPages:
         </div>
         """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
 
-        # Pacote Extreme
         st.markdown("""
         <div class="package-box package-extreme">
             <div class="package-header">
@@ -520,9 +533,8 @@ class NewPages:
         </div>
         """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)  # Fecha container de pacotes
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # ============= TEMPORIZADOR (SEGUNDA SEÇÃO) =============
         st.markdown("""
         <div class="countdown-container">
             <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
@@ -531,7 +543,6 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        # JavaScript para o countdown
         st.components.v1.html("""
         <script>
         function updateCountdown() {
@@ -558,28 +569,30 @@ class NewPages:
         </script>
         """, height=0)
 
-        # ============= PLANOS VIP (TERCEIRA SEÇÃO) =============
         plans = [
             {
                 "name": "1 Mês",
                 "price": "R$ 29,90",
                 "original": "R$ 49,90",
                 "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
-                "tag": "COMUM"
+                "tag": "COMUM",
+                "link": Config.CHECKOUT_VIP_1MES + "?plan=1mes"
             },
             {
                 "name": "3 Meses",
                 "price": "R$ 69,90",
                 "original": "R$ 149,70",
                 "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
-                "tag": "MAIS POPULAR"
+                "tag": "MAIS POPULAR",
+                "link": Config.CHECKOUT_VIP_3MESES + "?plan=3meses"
             },
             {
                 "name": "1 Ano",
                 "price": "R$ 199,90",
                 "original": "R$ 598,80",
                 "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
-                "tag": "MELHOR CUSTO-BENEFÍCIO"
+                "tag": "MELHOR CUSTO-BENEFÍCIO",
+                "link": Config.CHECKOUT_VIP_1ANO + "?plan=1ano"
             }
         ]
 
@@ -599,7 +612,7 @@ class NewPages:
                         {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
                     </ul>
                     <div style="text-align: center; margin-top: 15px;">
-                        <a href="{Config.VIP_LINK}?plan={plan['name'].replace(' ', '').lower()}" style="
+                        <a href="{plan['link']}" style="
                             background: linear-gradient(45deg, #ff1493, #9400d3);
                             color: white;
                             padding: 10px 20px;
@@ -619,7 +632,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (UI) (ATUALIZADO)
+# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
 # ======================
 class UiService:
     @staticmethod
@@ -816,7 +829,7 @@ class UiService:
                         use_container_width=True,
                         type="primary"):
                 st.session_state.age_verified = True
-                save_persistent_data()  # <-- Novo: Salva estado imediatamente
+                save_persistent_data()
                 st.rerun()
 
     @staticmethod
@@ -860,10 +873,10 @@ class UiService:
             
             st.markdown("""
             <div class="sidebar-header">
-                <img src="https://i.ibb.co/ks5CNrDn/IMG-9256.jpg" alt="Paloma">
+                <img src="{profile_img}" alt="Paloma">
                 <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
-            """, unsafe_allow_html=True)
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### 🌟 Menu Exclusivo")
@@ -878,7 +891,7 @@ class UiService:
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
                     st.session_state.current_page = page
-                    save_persistent_data()  # <-- Novo: Salva ao mudar de página
+                    save_persistent_data()
                     st.rerun()
             
             st.markdown("---")
@@ -914,7 +927,7 @@ class UiService:
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
                 st.session_state.current_page = "vip"
-                save_persistent_data()  # <-- Novo: Salva ao clicar
+                save_persistent_data()
                 st.rerun()
             
             st.markdown("---")
@@ -940,16 +953,11 @@ class UiService:
         """, unsafe_allow_html=True)
         
         cols = st.columns(3)
-        gallery_images = [
-            "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
-            "https://i.ibb.co/Y4B7CbXf/IMG-9202.jpg",
-            "https://i.ibb.co/Fqf0gPPq/IMG-9199.jpg"
-        ]
         
         for idx, col in enumerate(cols):
             with col:
                 st.image(
-                    gallery_images[idx],
+                    Config.IMG_GALLERY[idx],
                     use_container_width=True,
                     caption=f"Preview {idx+1}"
                 )
@@ -985,12 +993,11 @@ class UiService:
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
-            save_persistent_data()  # <-- Novo: Salva ao voltar
+            save_persistent_data()
             st.rerun()
 
     @staticmethod
     def chat_shortcuts():
-        """Barra de atalhos funcional com texto branco"""
         cols = st.columns(4)
         with cols[0]:
             if st.button("🏠 Início", key="shortcut_home", 
@@ -1021,7 +1028,6 @@ class UiService:
                 save_persistent_data()
                 st.rerun()
 
-        # CSS para estilização
         st.markdown("""
         <style>
             div[data-testid="stHorizontalBlock"] > div > div > button {
@@ -1069,7 +1075,6 @@ class UiService:
         </style>
         """, unsafe_allow_html=True)
         
-        # Adicionando a barra de atalhos
         UiService.chat_shortcuts()
         
         st.markdown(f"""
@@ -1094,7 +1099,7 @@ class UiService:
         """, unsafe_allow_html=True)
         
         ChatService.process_user_input(conn)
-        save_persistent_data()  # <-- Novo: Auto-salva após interação
+        save_persistent_data()
         
         st.markdown("""
         <div style="
@@ -1109,12 +1114,12 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
     def initialize_session(conn):
-        load_persistent_data()  # <-- Carrega dados persistentes
+        load_persistent_data()
         
         if "session_id" not in st.session_state:
             st.session_state.session_id = str(random.randint(100000, 999999))
@@ -1132,7 +1137,6 @@ class ChatService:
                 if m["role"] == "user"
             ])
         
-        # Garante que os estados essenciais existam
         defaults = {
             'age_verified': False,
             'connection_complete': False,
@@ -1281,7 +1285,7 @@ class ChatService:
                 resposta
             )
             
-            save_persistent_data()  # <-- Salva após cada interação
+            save_persistent_data()
             
             st.markdown("""
             <script>
@@ -1290,7 +1294,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADA)
+# APLICAÇÃO PRINCIPAL (ORIGINAL)
 # ======================
 def main():
     st.markdown("""
@@ -1316,44 +1320,37 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Inicializa conexão com banco de dados
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
     conn = st.session_state.db_conn
     
-    # Configura título da página
     st.title("💋 Paloma - Conteúdo Exclusivo")
     
-    # Inicialização robusta da sessão
     ChatService.initialize_session(conn)
     
-    # Verificação de idade (persistente)
     if not st.session_state.age_verified:
         UiService.age_verification()
         st.stop()
     
-    # Configura sidebar
     UiService.setup_sidebar()
     
-    # Efeito de chamada (executa apenas uma vez)
     if not st.session_state.connection_complete:
         UiService.show_call_effect()
         st.session_state.connection_complete = True
         save_persistent_data()
         st.rerun()
     
-    # Página inicial se chat não iniciado
     if not st.session_state.chat_started:
         col1, col2, col3 = st.columns([1,3,1])
         with col2:
             st.markdown("""
             <div style="text-align: center; margin: 50px 0;">
-                <img src="https://i.ibb.co/ks5CNrDn/IMG-9256.jpg" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
+                <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
                 <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
-            """, unsafe_allow_html=True)
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
                 st.session_state.update({
@@ -1365,7 +1362,6 @@ def main():
                 st.rerun()
         st.stop()
     
-    # Roteamento de páginas
     if st.session_state.current_page == "home":
         NewPages.show_home_page()
     elif st.session_state.current_page == "gallery":
@@ -1385,7 +1381,6 @@ def main():
     else:
         UiService.enhanced_chat_ui(conn)
     
-    # Garante salvamento final
     save_persistent_data()
 
 if __name__ == "__main__":
