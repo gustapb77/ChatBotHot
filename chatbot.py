@@ -29,7 +29,7 @@ class Config:
     AUDIO_DURATION = 7
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (NOVO)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -71,10 +71,10 @@ class PersistentState:
 
 def get_user_id():
     if 'user_id' not in st.session_state:
-        user_id = st.experimental_get_query_params().get('uid', [None])[0]
+        user_id = st.query_params.get('uid', None)  # Atualizado para nova API
         if not user_id:
             user_id = str(uuid.uuid4())
-            st.experimental_set_query_params(uid=user_id)
+            st.query_params['uid'] = user_id  # Atualizado para nova API
         st.session_state.user_id = user_id
     return st.session_state.user_id
 
@@ -83,7 +83,6 @@ def load_persistent_data():
     db = PersistentState()
     saved_data = db.load_state(user_id) or {}
     
-    # Mescla dados salvos com session_state sem sobrescrever valores ativos
     for key, value in saved_data.items():
         if key not in st.session_state:
             st.session_state[key] = value
@@ -92,7 +91,6 @@ def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
     
-    # Dados que queremos persistir
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
@@ -816,7 +814,7 @@ class UiService:
                         use_container_width=True,
                         type="primary"):
                 st.session_state.age_verified = True
-                save_persistent_data()  # <-- Novo: Salva estado imediatamente
+                save_persistent_data()
                 st.rerun()
 
     @staticmethod
@@ -878,7 +876,7 @@ class UiService:
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
                     st.session_state.current_page = page
-                    save_persistent_data()  # <-- Novo: Salva ao mudar de página
+                    save_persistent_data()
                     st.rerun()
             
             st.markdown("---")
@@ -914,7 +912,7 @@ class UiService:
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
                 st.session_state.current_page = "vip"
-                save_persistent_data()  # <-- Novo: Salva ao clicar
+                save_persistent_data()
                 st.rerun()
             
             st.markdown("---")
@@ -985,7 +983,7 @@ class UiService:
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
-            save_persistent_data()  # <-- Novo: Salva ao voltar
+            save_persistent_data()
             st.rerun()
 
     @staticmethod
@@ -1094,7 +1092,7 @@ class UiService:
         """, unsafe_allow_html=True)
         
         ChatService.process_user_input(conn)
-        save_persistent_data()  # <-- Novo: Auto-salva após interação
+        save_persistent_data()
         
         st.markdown("""
         <div style="
@@ -1114,7 +1112,7 @@ class UiService:
 class ChatService:
     @staticmethod
     def initialize_session(conn):
-        load_persistent_data()  # <-- Carrega dados persistentes
+        load_persistent_data()
         
         if "session_id" not in st.session_state:
             st.session_state.session_id = str(random.randint(100000, 999999))
@@ -1132,7 +1130,6 @@ class ChatService:
                 if m["role"] == "user"
             ])
         
-        # Garante que os estados essenciais existam
         defaults = {
             'age_verified': False,
             'connection_complete': False,
@@ -1281,7 +1278,7 @@ class ChatService:
                 resposta
             )
             
-            save_persistent_data()  # <-- Salva após cada interação
+            save_persistent_data()
             
             st.markdown("""
             <script>
@@ -1316,34 +1313,27 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Inicializa conexão com banco de dados
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
     conn = st.session_state.db_conn
     
-    # Configura título da página
     st.title("💋 Paloma - Conteúdo Exclusivo")
     
-    # Inicialização robusta da sessão
     ChatService.initialize_session(conn)
     
-    # Verificação de idade (persistente)
     if not st.session_state.age_verified:
         UiService.age_verification()
         st.stop()
     
-    # Configura sidebar
     UiService.setup_sidebar()
     
-    # Efeito de chamada (executa apenas uma vez)
     if not st.session_state.connection_complete:
         UiService.show_call_effect()
         st.session_state.connection_complete = True
         save_persistent_data()
         st.rerun()
     
-    # Página inicial se chat não iniciado
     if not st.session_state.chat_started:
         col1, col2, col3 = st.columns([1,3,1])
         with col2:
@@ -1365,7 +1355,6 @@ def main():
                 st.rerun()
         st.stop()
     
-    # Roteamento de páginas
     if st.session_state.current_page == "home":
         NewPages.show_home_page()
     elif st.session_state.current_page == "gallery":
@@ -1385,7 +1374,6 @@ def main():
     else:
         UiService.enhanced_chat_ui(conn)
     
-    # Garante salvamento final
     save_persistent_data()
 
 if __name__ == "__main__":
