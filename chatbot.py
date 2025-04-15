@@ -1,5 +1,5 @@
 # ======================
-# IMPORTAÇÕES (MANTIDO ORIGINAL)
+# IMPORTAÇÕES
 # ======================
 import streamlit as st
 import requests
@@ -14,22 +14,33 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES (MANTIDO ORIGINAL + NOVOS LINKS)
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
 # ======================
 class Config:
+    # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    
+    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
+    
+    # URLs de assinatura VIP (NOVO)
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
+    
+    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
+    
+    # Imagens organizadas (NOVO)
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -43,7 +54,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (MANTIDO ORIGINAL)
+# PERSISTÊNCIA DE ESTADO (ORIGINAL)
 # ======================
 class PersistentState:
     _instance = None
@@ -120,7 +131,7 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (MANTIDO ORIGINAL)
+# MODELOS DE DADOS (ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
@@ -144,7 +155,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (MANTIDO ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -184,7 +195,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (MANTIDO ORIGINAL)
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
@@ -228,7 +239,7 @@ class ApiService:
             return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# PÁGINAS (MANTIDO ORIGINAL)
+# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
 # ======================
 class NewPages:
     @staticmethod
@@ -621,7 +632,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ATUALIZADO COM NOVA ANIMAÇÃO)
+# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
 # ======================
 class UiService:
     @staticmethod
@@ -640,156 +651,60 @@ class UiService:
         """
 
     @staticmethod
-    def show_pro_call_effect():
-        # Limpa qualquer conteúdo anterior
-        st.markdown("""
+    def show_call_effect():
+        LIGANDO_DELAY = 5
+        ATENDIDA_DELAY = 3
+
+        call_container = st.empty()
+        call_container.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #ff66b3;
+            text-align: center;
+            color: white;
+            animation: pulse-ring 2s infinite;
+        ">
+            <div style="font-size: 3rem;">📱</div>
+            <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
+                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
+                <span style="font-size: 0.9rem;">Online agora</span>
+            </div>
+        </div>
         <style>
-            [data-testid="stAppViewContainer"] > .main {
-                background: linear-gradient(135deg, #1e0033 0%, #3c0066 100%) !important;
-                padding: 0 !important;
-            }
-            .st-emotion-cache-uf99v8 {
-                padding: 0 !important;
-            }
+            @keyframes pulse-ring {{
+                0% {{ transform: scale(0.95); opacity: 0.8; }}
+                50% {{ transform: scale(1.05); opacity: 1; }}
+                100% {{ transform: scale(0.95); opacity: 0.8; }}
+            }}
         </style>
         """, unsafe_allow_html=True)
         
-        call_container = st.empty()
-        
-        # HTML/CSS profissional para a chamada
-        call_html = """
+        time.sleep(LIGANDO_DELAY)
+        call_container.markdown(f"""
         <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e0033 0%, #3c0066 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            animation: fadeIn 0.5s;
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #4CAF50;
+            text-align: center;
+            color: white;
         ">
-            <!-- Ícone animado -->
-            <div style="
-                width: 120px;
-                height: 120px;
-                background: rgba(255, 102, 179, 0.2);
-                border-radius: 50%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin-bottom: 30px;
-                border: 2px solid #ff66b3;
-                animation: pulse 2s infinite;
-            ">
-                <div style="
-                    font-size: 50px;
-                    color: #ff66b3;
-                    animation: bounce 1s infinite alternate;
-                ">📞</div>
-            </div>
-            
-            <!-- Texto principal -->
-            <h2 style="
-                color: white;
-                font-family: 'Arial', sans-serif;
-                margin-bottom: 10px;
-                text-align: center;
-            ">Conectando você à Paloma...</h2>
-            
-            <!-- Status -->
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                color: #aaa;
-                margin-top: 20px;
-            ">
-                <div style="
-                    width: 12px;
-                    height: 12px;
-                    background: #4CAF50;
-                    border-radius: 50%;
-                    animation: blink 1.5s infinite;
-                "></div>
-                <span>Chamada criptografada • Conexão segura</span>
-            </div>
-            
-            <!-- Barra de progresso -->
-            <div style="
-                width: 200px;
-                height: 3px;
-                background: rgba(255, 102, 179, 0.3);
-                margin-top: 40px;
-                border-radius: 3px;
-                overflow: hidden;
-            ">
-                <div id="progress-bar" style="
-                    height: 100%;
-                    width: 0%;
-                    background: linear-gradient(90deg, #ff66b3, #ff1493);
-                    transition: width 5s linear;
-                "></div>
-            </div>
+            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
+            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
+            <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
         </div>
-
-        <style>
-            @keyframes pulse {
-                0% { transform: scale(0.95); opacity: 0.8; }
-                50% { transform: scale(1.05); opacity: 1; }
-                100% { transform: scale(0.95); opacity: 0.8; }
-            }
-            @keyframes bounce {
-                to { transform: translateY(-10px); }
-            }
-            @keyframes blink {
-                0%, 100% { opacity: 0.5; }
-                50% { opacity: 1; }
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-        </style>
+        """, unsafe_allow_html=True)
         
-        <script>
-            // Animação da barra de progresso
-            document.getElementById('progress-bar').style.width = '100%';
-        </script>
-        """
-        
-        # Exibe o efeito de chamada
-        call_container.markdown(call_html, unsafe_allow_html=True)
-        
-        # Tempo da animação (5 segundos)
-        time.sleep(5)
-        
-        # Atualiza para "Chamada conectada"
-        call_html = call_html.replace("Conectando você à Paloma...", """
-        <div style="animation: checkIn 0.5s;">
-            <div style="
-                font-size: 60px;
-                color: #4CAF50;
-                margin-bottom: 20px;
-                text-align: center;
-            ">✓</div>
-            <h2 style="color: white;">Chamada conectada!</h2>
-            <p style="color: #aaa; margin-top: 10px;">Paloma está pronta para você...</p>
-        </div>
-        <style>
-            @keyframes checkIn {
-                0% { transform: scale(0); opacity: 0; }
-                80% { transform: scale(1.1); opacity: 1; }
-                100% { transform: scale(1); }
-            }
-        </style>
-        """)
-        
-        call_container.markdown(call_html, unsafe_allow_html=True)
-        time.sleep(2)
+        time.sleep(ATENDIDA_DELAY)
         call_container.empty()
 
     @staticmethod
@@ -1199,7 +1114,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (MANTIDO ORIGINAL)
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -1379,7 +1294,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADO COM NOVA TRANSIÇÃO)
+# APLICAÇÃO PRINCIPAL (ORIGINAL)
 # ======================
 def main():
     st.markdown("""
@@ -1421,24 +1336,7 @@ def main():
     UiService.setup_sidebar()
     
     if not st.session_state.connection_complete:
-        # Limpa completamente o layout anterior
-        st.empty()
-        
-        # Força o fundo gradiente durante a transição
-        st.markdown("""
-        <style>
-            [data-testid="stAppViewContainer"] > .main {
-                background: linear-gradient(135deg, #1e0033 0%, #3c0066 100%) !important;
-                padding: 0 !important;
-            }
-            .st-emotion-cache-uf99v8 {
-                padding: 0 !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # Chama a nova animação profissional
-        UiService.show_pro_call_effect()
+        UiService.show_call_effect()
         st.session_state.connection_complete = True
         save_persistent_data()
         st.rerun()
