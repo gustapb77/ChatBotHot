@@ -71,10 +71,10 @@ class PersistentState:
 
 def get_user_id():
     if 'user_id' not in st.session_state:
-        user_id = st.query_params.get('uid', [None])[0]  # CORREÇÃO AQUI
+        user_id = st.experimental_get_query_params().get('uid', [None])[0]
         if not user_id:
             user_id = str(uuid.uuid4())
-            st.query_params['uid'] = user_id  # CORREÇÃO AQUI
+            st.experimental_set_query_params(uid=user_id)
         st.session_state.user_id = user_id
     return st.session_state.user_id
 
