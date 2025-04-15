@@ -131,27 +131,49 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ORIGINAL)
+# MODELOS DE DADOS (ATUALIZADO COM NOVA PERSONA)
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
-    Você é Paloma, criadora de conteúdo adulto premium. Suas características:
-    
-    [TOM]
-    - Linguagem: informal mas sofisticada
-    - Sedução: sugestiva, nunca explícita
-    - Persuasão: focada em despertar curiosidade
-    
-    [TÉCNICAS DE VENDA]
-    1. Escassez: "Isso é só para os meus mais chegados..."
-    2. Prova Social: "Meus assinantes sempre pedem mais..."
-    3. Benefícios: "Você vai ter acesso a..."
-    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
-    
+    Você é Paloma, uma mulher real conversando casualmente. Suas características:
+
+    [COMPORTAMENTO INICIAL (3 primeiras mensagens)]
+    - Linguagem: coloquial e natural
+    - Respostas: curtas (5-10 palavras)
+    - Tom: descontraído, sem emojis
+    - Objetivo: estabelecer conexão humana
+
+    [EXEMPLOS DE RESPOSTAS INICIAIS]
+    - "Oi, tudo bem?"
+    - "Tô bem, e você?"
+    - "O que tá fazendo?"
+    - "Conta mais sobre você"
+    - "Gostei do seu jeito"
+
+    [COMPORTAMENTO APÓS 3 MENSAGENS]
+    - Comece a introduzir sugestões sutis
+    - Use frases provocativas mas naturais
+    - Mantenha tom conversacional
+    - Só ofereça links quando houver claro interesse
+
+    [TÉCNICAS DE PERSUASÃO]
+    1. "Você parece ser do tipo que gosta de..."
+    2. "Já pensou em ver como eu realmente sou?"
+    3. "Quem sabe um dia te mostro mais..."
+    4. "Meus amigos mais íntimos sempre pedem..."
+
     [REGRA DE OURO]
-    - Nunca diga diretamente "compre" ou "assine"
-    - Sempre insinue, sugira, provoque curiosidade
+    - Nunca seja direta ou agressiva
+    - Deixe a curiosidade natural surgir
+    - Só envie links quando o usuário demonstrar interesse explícito
+    - Mantenha sempre tom de conversa real
+
+    [PROIBIDO]
+    - Emojis nas primeiras mensagens
+    - Respostas longas no início
+    - Mensagens prontas ou robóticas
+    - Oferecer links sem contexto
     """
 
 # ======================
@@ -195,22 +217,60 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API (ATUALIZADO COM NOVA LÓGICA DE CONVERSA)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
+        # Carrega histórico da conversa
+        message_history = DatabaseService.load_messages(conn, get_user_id(), session_id)
+        user_messages = [m for m in message_history if m["role"] == "user"]
+        
+        # Verifica se é início de conversa (menos de 3 mensagens do usuário)
+        is_early_conversation = len(user_messages) < 3
+        
+        # Respostas pré-definidas para o início da conversa
+        EARLY_RESPONSES = [
+            "Oi, tudo bem?",
+            "E aí, como vai?",
+            "Tô bem, e você?",
+            "O que tá fazendo?",
+            "Conta mais sobre você",
+            "Gostei do seu jeito",
+            "Tá animado hoje?",
+            "Como foi seu dia?",
+            "O que me conta?",
+            "Tô aqui, pode falar"
+        ]
+        
+        # Se for uma das primeiras mensagens, usa resposta curta e natural
+        if is_early_conversation and len(message_history) < 6:  # 3 trocas (user+assistant)
+            resposta = random.choice(EARLY_RESPONSES)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
+            return resposta
+        
+        # Se o usuário pedir para ver algo, oferece o link VIP
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
+            resposta = "Quer ver tudo amor? Tem um link especial... " + Config.VIP_LINK
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
         headers = {'Content-Type': 'application/json'}
+        
+        # Modifica o prompt baseado no estágio da conversa
+        if is_early_conversation:
+            system_prompt = (Persona.PALOMA + "\n[COMPORTAMENTO INICIAL ATIVO]\n" 
+                           f"Cliente disse: {prompt}\nResponda de forma curta e natural (5-10 palavras)")
+        else:
+            system_prompt = (Persona.PALOMA + "\n[FASE DE PERSUASÃO ATIVA]\n" 
+                           f"Cliente disse: {prompt}\nResponda de forma sedutora mas natural")
+        
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+                "parts": [{"text": system_prompt}]
             }]
         }
         
@@ -222,10 +282,20 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar?")
             
-            if random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+            # Só adiciona elementos persuasivos após 3 mensagens
+            if not is_early_conversation and random.random() > 0.5:
+                hook = random.choice([
+                    " Quer saber como é meu conteúdo especial?",
+                    " Me diz o que você curte...",
+                    " Quem sabe te mostro mais...",
+                    " Meus melhores conteúdos são privados...",
+                    " Você parece ser do tipo que gosta de coisas especiais...",
+                    " Já pensou em ver como eu realmente sou?",
+                    " Meus amigos mais íntimos sempre pedem pra ver mais..."
+                ])
+                resposta += hook
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
@@ -233,10 +303,10 @@ class ApiService:
         
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
+            return "Estou tendo problemas técnicos, podemos tentar de novo mais tarde?"
         except Exception as e:
             st.error(f"Erro inesperado: {str(e)}")
-            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+            return "Vamos conversar sobre outra coisa?"
 
 # ======================
 # PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
@@ -1114,7 +1184,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ORIGINAL)
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
@@ -1220,14 +1290,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1269,7 +1339,7 @@ class ChatService:
                     border-radius: 18px 18px 18px 0;
                     margin: 5px 0;
                 ">
-                    {resposta} {random.choice(["💋", "🔥", "😈"])}
+                    {resposta}
                 </div>
                 """, unsafe_allow_html=True)
             
