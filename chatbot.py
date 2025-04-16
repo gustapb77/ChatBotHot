@@ -14,22 +14,33 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
 # ======================
 class Config:
+    # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    
+    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
+    
+    # URLs de assinatura VIP (NOVO)
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
+    
+    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
+    
+    # Imagens organizadas (NOVO)
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -43,7 +54,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO
+# PERSISTÊNCIA DE ESTADO (ORIGINAL)
 # ======================
 class PersistentState:
     _instance = None
@@ -125,36 +136,26 @@ def save_persistent_data():
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
-    Você é Paloma, uma mulher sensual e confiante. Suas características:
-
-    [TOM]
-    - Linguagem natural e direta
-    - Frases curtas (máximo 6-8 palavras)
-    - Sem emojis ou pontuação excessiva
-    - Tom íntimo e sugestivo
-
-    [ESTILO]
-    - Respostas objetivas
-    - Vocabulário simples
-    - Sedução através de sugestões
-    - Persuasão discreta
-
-    [EXEMPLOS]
-    - "Posso te mostrar mais..."
-    - "Isso é especial..."
-    - "Me conta o que quer..."
-    - "Você vai gostar..."
-    - "Só para os mais chegados..."
-
-    [REGRA DE OURO]
-    - Nunca use emojis
-    - Nunca exagere na pontuação
-    - Mantenha frases curtas
-    - Deixe sempre um ar de mistério
+    Você é Paloma, criadora de conteúdo adulto premium. Suas características:
+    
+    [DIRETRIZES DE RESPOSTA]
+    - Linguagem: direta e objetiva
+    - Respostas: curtas (máximo 8 palavras)
+    - Sem emojis ou caracteres especiais
+    - Foco em despertar interesse sem ser explícita
+    
+    [TÉCNICAS DE VENDA]
+    1. Sugestão indireta: "Isso está disponível no VIP..."
+    2. Prova Social: "Meus assinantes adoram..."
+    3. Chamadas sutis: "Quer ver mais?"
+    
+    [REGRA PRINCIPAL]
+    - Nunca seja direta sobre vendas
+    - Mantenha todas as respostas muito breves
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -194,14 +195,14 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (ATUALIZADO)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = f"Quer ver tudo? {Config.VIP_LINK}"
+            resposta = "Conteúdo completo no VIP"
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
@@ -209,8 +210,14 @@ class ApiService:
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 8 palavras"}]
-            }]
+                "parts": [{
+                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 8 palavras, sem emojis"
+                }]
+            }],
+            "generationConfig": {
+                "maxOutputTokens": 30,
+                "temperature": 0.7
+            }
         }
         
         try:
@@ -221,10 +228,13 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar sobre outra coisa")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos falar de outra coisa?")
             
-            if random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje", "Vagas limitadas", "Oferta especial"])
+            # Remove qualquer emoji que possa ter vindo da API
+            resposta = re.sub(r'[^\w\s,.!?]', '', resposta)
+            
+            # Garante que a resposta seja curta
+            resposta = ' '.join(resposta.split()[:8])
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
@@ -232,13 +242,13 @@ class ApiService:
         
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return "Problemas técnicos, vamos tentar mais tarde"
+            return "Problemas técnicos, tente mais tarde"
         except Exception as e:
             st.error(f"Erro inesperado: {str(e)}")
-            return "Vamos conversar sobre outra coisa"
+            return "Vamos falar de outra coisa?"
 
 # ======================
-# PÁGINAS
+# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
 # ======================
 class NewPages:
     @staticmethod
@@ -631,7 +641,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (ATUALIZADO)
 # ======================
 class UiService:
     @staticmethod
@@ -1113,7 +1123,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
@@ -1155,33 +1165,14 @@ class ChatService:
         with chat_container:
             for msg in st.session_state.messages[-12:]:
                 if msg["role"] == "user":
-                    with st.chat_message("user", avatar="🧑"):
-                        st.markdown(f"""
-                        <div style="
-                            background: rgba(0, 0, 0, 0.1);
-                            padding: 12px;
-                            border-radius: 18px 18px 0 18px;
-                            margin: 5px 0;
-                        ">
-                            {msg["content"]}
-                        </div>
-                        """, unsafe_allow_html=True)
+                    with st.chat_message("user"):
+                        st.write(msg["content"])
                 elif msg["content"] == "[ÁUDIO]":
-                    with st.chat_message("assistant", avatar="💋"):
+                    with st.chat_message("assistant"):
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
                 else:
-                    with st.chat_message("assistant", avatar="💋"):
-                        st.markdown(f"""
-                        <div style="
-                            background: linear-gradient(45deg, #ff66b3, #ff1493);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 18px 18px 18px 0;
-                            margin: 5px 0;
-                        ">
-                            {msg["content"]}
-                        </div>
-                        """, unsafe_allow_html=True)
+                    with st.chat_message("assistant"):
+                        st.write(msg["content"])
 
     @staticmethod
     def validate_input(user_input):
@@ -1211,7 +1202,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        user_input = st.chat_input("Digite sua mensagem...", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1219,14 +1210,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "content": "Podemos continuar mais tarde"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "Podemos continuar mais tarde"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1246,31 +1237,12 @@ class ChatService:
             
             st.session_state.request_count += 1
             
-            with st.chat_message("user", avatar="🧑"):
-                st.markdown(f"""
-                <div style="
-                    background: rgba(0, 0, 0, 0.1);
-                    padding: 12px;
-                    border-radius: 18px 18px 0 18px;
-                    margin: 5px 0;
-                ">
-                    {cleaned_input}
-                </div>
-                """, unsafe_allow_html=True)
+            with st.chat_message("user"):
+                st.write(cleaned_input)
             
-            with st.chat_message("assistant", avatar="💋"):
+            with st.chat_message("assistant"):
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(45deg, #ff66b3, #ff1493);
-                    color: white;
-                    padding: 12px;
-                    border-radius: 18px 18px 18px 0;
-                    margin: 5px 0;
-                ">
-                    {resposta} {random.choice(["💋", "🔥", "😈"])}
-                </div>
-                """, unsafe_allow_html=True)
+                st.write(resposta)
             
             st.session_state.messages.append({
                 "role": "assistant",
@@ -1293,7 +1265,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (ATUALIZADO)
 # ======================
 def main():
     st.markdown("""
@@ -1347,7 +1319,7 @@ def main():
             <div style="text-align: center; margin: 50px 0;">
                 <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
-                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
+                <p style="font-size: 1.1em;">Estou pronta para você...</p>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
