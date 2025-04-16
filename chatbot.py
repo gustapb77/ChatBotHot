@@ -131,27 +131,27 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ATUALIZADO)
+# MODELOS DE DADOS (ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
     Você é Paloma, criadora de conteúdo adulto premium. Suas características:
     
-    [DIRETRIZES DE RESPOSTA]
-    - Linguagem: direta e objetiva
-    - Respostas: curtas (máximo 8 palavras)
-    - Sem emojis ou caracteres especiais
-    - Foco em despertar interesse sem ser explícita
+    [TOM]
+    - Linguagem: informal mas sofisticada
+    - Sedução: sugestiva, nunca explícita
+    - Persuasão: focada em despertar curiosidade
     
     [TÉCNICAS DE VENDA]
-    1. Sugestão indireta: "Isso está disponível no VIP..."
-    2. Prova Social: "Meus assinantes adoram..."
-    3. Chamadas sutis: "Quer ver mais?"
+    1. Escassez: "Isso é só para os meus mais chegados..."
+    2. Prova Social: "Meus assinantes sempre pedem mais..."
+    3. Benefícios: "Você vai ter acesso a..."
+    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
     
-    [REGRA PRINCIPAL]
-    - Nunca seja direta sobre vendas
-    - Mantenha todas as respostas muito breves
+    [REGRA DE OURO]
+    - Nunca diga diretamente "compre" ou "assine"
+    - Sempre insinue, sugira, provoque curiosidade
     """
 
 # ======================
@@ -195,14 +195,14 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO)
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = "Conteúdo completo no VIP"
+            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
@@ -210,14 +210,8 @@ class ApiService:
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{
-                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 8 palavras, sem emojis"
-                }]
-            }],
-            "generationConfig": {
-                "maxOutputTokens": 30,
-                "temperature": 0.7
-            }
+                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+            }]
         }
         
         try:
@@ -228,13 +222,10 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos falar de outra coisa?")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
             
-            # Remove qualquer emoji que possa ter vindo da API
-            resposta = re.sub(r'[^\w\s,.!?]', '', resposta)
-            
-            # Garante que a resposta seja curta
-            resposta = ' '.join(resposta.split()[:8])
+            if random.random() > 0.7:
+                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
@@ -242,10 +233,10 @@ class ApiService:
         
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return "Problemas técnicos, tente mais tarde"
+            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
         except Exception as e:
             st.error(f"Erro inesperado: {str(e)}")
-            return "Vamos falar de outra coisa?"
+            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
 # PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
@@ -641,7 +632,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ATUALIZADO)
+# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
 # ======================
 class UiService:
     @staticmethod
@@ -1123,7 +1114,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -1165,14 +1156,33 @@ class ChatService:
         with chat_container:
             for msg in st.session_state.messages[-12:]:
                 if msg["role"] == "user":
-                    with st.chat_message("user"):
-                        st.write(msg["content"])
+                    with st.chat_message("user", avatar="🧑"):
+                        st.markdown(f"""
+                        <div style="
+                            background: rgba(0, 0, 0, 0.1);
+                            padding: 12px;
+                            border-radius: 18px 18px 0 18px;
+                            margin: 5px 0;
+                        ">
+                            {msg["content"]}
+                        </div>
+                        """, unsafe_allow_html=True)
                 elif msg["content"] == "[ÁUDIO]":
-                    with st.chat_message("assistant"):
+                    with st.chat_message("assistant", avatar="💋"):
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
                 else:
-                    with st.chat_message("assistant"):
-                        st.write(msg["content"])
+                    with st.chat_message("assistant", avatar="💋"):
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(45deg, #ff66b3, #ff1493);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 18px 18px 18px 0;
+                            margin: 5px 0;
+                        ">
+                            {msg["content"]}
+                        </div>
+                        """, unsafe_allow_html=True)
 
     @staticmethod
     def validate_input(user_input):
@@ -1202,7 +1212,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Digite sua mensagem...", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1210,14 +1220,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Podemos continuar mais tarde"
+                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Podemos continuar mais tarde"
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1237,12 +1247,31 @@ class ChatService:
             
             st.session_state.request_count += 1
             
-            with st.chat_message("user"):
-                st.write(cleaned_input)
+            with st.chat_message("user", avatar="🧑"):
+                st.markdown(f"""
+                <div style="
+                    background: rgba(0, 0, 0, 0.1);
+                    padding: 12px;
+                    border-radius: 18px 18px 0 18px;
+                    margin: 5px 0;
+                ">
+                    {cleaned_input}
+                </div>
+                """, unsafe_allow_html=True)
             
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar="💋"):
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                st.write(resposta)
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                    color: white;
+                    padding: 12px;
+                    border-radius: 18px 18px 18px 0;
+                    margin: 5px 0;
+                ">
+                    {resposta} {random.choice(["💋", "🔥", "😈"])}
+                </div>
+                """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
@@ -1265,7 +1294,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADO)
+# APLICAÇÃO PRINCIPAL (ORIGINAL)
 # ======================
 def main():
     st.markdown("""
@@ -1319,7 +1348,7 @@ def main():
             <div style="text-align: center; margin: 50px 0;">
                 <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
-                <p style="font-size: 1.1em;">Estou pronta para você...</p>
+                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
