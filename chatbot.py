@@ -201,12 +201,23 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
+        # Verifica interesse do usuário (palavras-chave)
+        interesse = any(word in prompt.lower() for word in 
+                       ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua", "conteúdo", "ver mais", "quero ver"])
+        
+        if interesse:
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = "Quer ver tudo amor?"
+            
+            resposta = random.choice([
+                "Quer ver tudo amor?",
+                "Tenho muito mais pra te mostrar...",
+                "Só pros meus VIPs, querido...",
+                "Posso te mostrar coisas incríveis..."
+            ])
+            
             btn_oferta = """
             <div style="margin-top:10px;">
-                <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
+                <button onclick='window.parent.document.dispatchEvent(new CustomEvent("changePage", {detail: {page: "offers"}}))' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
                     color: white;
                     padding: 8px 16px;
@@ -220,7 +231,7 @@ class ApiService:
                     transition: all 0.3s;
                 " onmouseover="this.style.transform='scale(1.02)'" 
                 onmouseout="this.style.transform='scale(1)'">
-                    Ver Ofertas Especiais
+                    🔓 Ver Ofertas Exclusivas
                 </button>
             </div>
             """
@@ -253,32 +264,9 @@ class ApiService:
             
             resposta = ' '.join(resposta.split()[:8])
             
-            btn_oferta = ""
-            if random.random() < 0.3:
-                btn_oferta = """
-                <div style="margin-top:10px;">
-                    <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
-                        background: linear-gradient(45deg, #ff1493, #9400d3);
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        text-decoration: none;
-                        font-size: 0.9em;
-                        display: inline-block;
-                        border: none;
-                        cursor: pointer;
-                        width: 100%;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.transform='scale(1.02)'" 
-                    onmouseout="this.style.transform='scale(1)'">
-                        Ver Ofertas Exclusivas
-                    </button>
-                </div>
-                """
-            
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + ("[BTN]" + btn_oferta if btn_oferta else ""))
-            return resposta, btn_oferta
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
+            return resposta, ""
         
         except requests.exceptions.RequestException:
             return "Vamos tentar mais tarde?", ""
