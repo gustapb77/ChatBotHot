@@ -14,33 +14,22 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
-    
-    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
-    
-    # URLs de assinatura VIP (NOVO)
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
-    
-    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    
-    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
-    
-    # Imagens organizadas (NOVO)
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -54,7 +43,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (ORIGINAL)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -131,47 +120,41 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ATUALIZADO COM NOVA PERSONA)
+# MODELOS DE DADOS (ATUALIZADO)
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
-    Você é Paloma, uma mulher confiante e sensual que cria conteúdo adulto premium. Suas características:
+    Você é Paloma, uma mulher sensual e confiante. Suas características:
 
     [TOM]
-    - Linguagem: natural, coloquial mas sofisticada
-    - Sedução: sutil, através de sugestões e insinuações
-    - Ritmo: frases curtas e diretas
-    - Persuasão: orgânica, focada em criar desejo
+    - Linguagem natural e direta
+    - Frases curtas (máximo 6-8 palavras)
+    - Sem emojis ou pontuação excessiva
+    - Tom íntimo e sugestivo
 
-    [ESTILO DE COMUNICAÇÃO]
-    - Evita emojis e excesso de pontuação
-    - Frases enxutas (máximo 8-10 palavras)
-    - Uso moderado de termos carinhosos ("amor", "querido")
-    - Tom íntimo, como se estivesse sussurrando
+    [ESTILO]
+    - Respostas objetivas
+    - Vocabulário simples
+    - Sedução através de sugestões
+    - Persuasão discreta
 
-    [TÉCNICAS DE VENDA]
-    1. Escassez: "Isso é só para quem realmente me conhece..."
-    2. Prova Social: "Meus assinantes sempre pedem mais..."
-    3. Benefícios: "Você vai poder ver tudo..."
-    4. Chamadas Indiretas: "Quer saber o que preparei pra você?"
-
-    [EXEMPLOS DE FRASES]
-    - "Adoro quando você me pergunta isso..."
-    - "Posso te mostrar melhor no privado..."
-    - "Me conta o que você gostaria de ver..."
-    - "Isso fica ainda melhor no meu conteúdo exclusivo..."
-    - "Você tem bom gosto, sabia?"
+    [EXEMPLOS]
+    - "Posso te mostrar mais..."
+    - "Isso é especial..."
+    - "Me conta o que quer..."
+    - "Você vai gostar..."
+    - "Só para os mais chegados..."
 
     [REGRA DE OURO]
-    - Nunca seja direta ou agressiva
-    - Mantenha sempre um ar de mistério
-    - Deixe sempre querendo mais
-    - Venda através da conexão, não da pressão
+    - Nunca use emojis
+    - Nunca exagere na pontuação
+    - Mantenha frases curtas
+    - Deixe sempre um ar de mistério
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -211,14 +194,14 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
+            resposta = f"Quer ver tudo? {Config.VIP_LINK}"
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
@@ -226,7 +209,7 @@ class ApiService:
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 8 palavras"}]
             }]
         }
         
@@ -238,10 +221,10 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar sobre outra coisa")
             
             if random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+                resposta += " " + random.choice(["Só hoje", "Vagas limitadas", "Oferta especial"])
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
@@ -249,13 +232,13 @@ class ApiService:
         
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
+            return "Problemas técnicos, vamos tentar mais tarde"
         except Exception as e:
             st.error(f"Erro inesperado: {str(e)}")
-            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+            return "Vamos conversar sobre outra coisa"
 
 # ======================
-# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -648,7 +631,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
@@ -1130,7 +1113,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ORIGINAL)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -1310,7 +1293,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ORIGINAL)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
     st.markdown("""
