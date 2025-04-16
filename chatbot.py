@@ -195,15 +195,51 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API (ATUALIZADO COM BOTÕES DE OFERTA)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
+        # Palavras-chave que indicam interesse em comprar/ver conteúdo
+        interest_keywords = [
+            "quero ver", "quero comprar", "como assinar", 
+            "quanto custa", "valor", "preço", "oferta",
+            "promoção", "desconto", "vip", "conteúdo exclusivo",
+            "mostrar mais", "ver mais", "fotos", "vídeos"
+        ]
+        
+        # Verifica se o usuário pediu para ver algo
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
+            
+            # Nova resposta com botão em vez de link
+            resposta = {
+                "text": "Quer ver tudo amor? 💋",
+                "button": True,
+                "button_text": "Ver Ofertas Exclusivas",
+                "button_target": "offers"
+            }
+            
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+            return resposta
+        
+        # Verifica interesse geral
+        if any(keyword in prompt.lower() for keyword in interest_keywords) and random.random() > 0.3:
+            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            
+            # Resposta com botão de oferta
+            resposta = {
+                "text": random.choice([
+                    "Tenho umas ofertas especiais só para você...",
+                    "Que tal dar uma olhada no que preparei?",
+                    "Se quiser algo realmente exclusivo..."
+                ]),
+                "button": True,
+                "button_text": "🔥 Ofertas VIP 🔥",
+                "button_target": "offers"
+            }
+            
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
         
         headers = {'Content-Type': 'application/json'}
@@ -222,21 +258,32 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
+            resposta_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
             
             if random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+                resposta_text += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+            
+            resposta = {
+                "text": resposta_text,
+                "button": False
+            }
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
         
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
+            return {
+                "text": "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋",
+                "button": False
+            }
         except Exception as e:
             st.error(f"Erro inesperado: {str(e)}")
-            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+            return {
+                "text": "Hmm... que tal conversarmos sobre algo mais interessante? 😉",
+                "button": False
+            }
 
 # ======================
 # PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
@@ -632,7 +679,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
+# SERVIÇOS DE INTERFACE (ATUALIZADO COM BOTÕES)
 # ======================
 class UiService:
     @staticmethod
@@ -1114,7 +1161,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ORIGINAL)
+# SERVIÇOS DE CHAT (ATUALIZADO COM BOTÕES)
 # ======================
 class ChatService:
     @staticmethod
@@ -1171,18 +1218,57 @@ class ChatService:
                     with st.chat_message("assistant", avatar="💋"):
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
                 else:
-                    with st.chat_message("assistant", avatar="💋"):
-                        st.markdown(f"""
-                        <div style="
-                            background: linear-gradient(45deg, #ff66b3, #ff1493);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 18px 18px 18px 0;
-                            margin: 5px 0;
-                        ">
-                            {msg["content"]}
-                        </div>
-                        """, unsafe_allow_html=True)
+                    try:
+                        content_data = json.loads(msg["content"])
+                        if isinstance(content_data, dict):
+                            with st.chat_message("assistant", avatar="💋"):
+                                st.markdown(f"""
+                                <div style="
+                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                                    color: white;
+                                    padding: 12px;
+                                    border-radius: 18px 18px 18px 0;
+                                    margin: 5px 0;
+                                ">
+                                    {content_data.get("text", "")} {random.choice(["💋", "🔥", "😈"])}
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                if content_data.get("button", False):
+                                    if st.button(
+                                        content_data.get("button_text", "Ver Ofertas"),
+                                        key=f"hist_button_{msg.get('timestamp', '')}",
+                                        use_container_width=True
+                                    ):
+                                        st.session_state.current_page = content_data.get("button_target", "offers")
+                                        save_persistent_data()
+                                        st.rerun()
+                        else:
+                            with st.chat_message("assistant", avatar="💋"):
+                                st.markdown(f"""
+                                <div style="
+                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                                    color: white;
+                                    padding: 12px;
+                                    border-radius: 18px 18px 18px 0;
+                                    margin: 5px 0;
+                                ">
+                                    {msg["content"]} {random.choice(["💋", "🔥", "😈"])}
+                                </div>
+                                """, unsafe_allow_html=True)
+                    except json.JSONDecodeError:
+                        with st.chat_message("assistant", avatar="💋"):
+                            st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(45deg, #ff66b3, #ff1493);
+                                color: white;
+                                padding: 12px;
+                                border-radius: 18px 18px 18px 0;
+                                margin: 5px 0;
+                            ">
+                                {msg["content"]} {random.choice(["💋", "🔥", "😈"])}
+                            </div>
+                            """, unsafe_allow_html=True)
 
     @staticmethod
     def validate_input(user_input):
@@ -1261,28 +1347,52 @@ class ChatService:
             
             with st.chat_message("assistant", avatar="💋"):
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(45deg, #ff66b3, #ff1493);
-                    color: white;
-                    padding: 12px;
-                    border-radius: 18px 18px 18px 0;
-                    margin: 5px 0;
-                ">
-                    {resposta} {random.choice(["💋", "🔥", "😈"])}
-                </div>
-                """, unsafe_allow_html=True)
+                
+                if isinstance(resposta, dict):
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {resposta.get("text", "")} {random.choice(["💋", "🔥", "😈"])}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if resposta.get("button", False):
+                        if st.button(
+                            resposta.get("button_text", "Ver Ofertas"),
+                            key=f"chat_button_{time.time()}",
+                            use_container_width=True
+                        ):
+                            st.session_state.current_page = resposta.get("button_target", "offers")
+                            save_persistent_data()
+                            st.rerun()
+                else:
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {resposta} {random.choice(["💋", "🔥", "😈"])}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": resposta
+                "content": json.dumps(resposta) if isinstance(resposta, dict) else resposta
             })
             DatabaseService.save_message(
                 conn,
                 get_user_id(),
                 st.session_state.session_id,
                 "assistant",
-                resposta
+                json.dumps(resposta) if isinstance(resposta, dict) else resposta
             )
             
             save_persistent_data()
@@ -1316,6 +1426,20 @@ def main():
         [data-testid="stChatInput"] {
             background: rgba(255, 102, 179, 0.1) !important;
             border: 1px solid #ff66b3 !important;
+        }
+        div.stButton > button:first-child {
+            background: linear-gradient(45deg, #ff1493, #9400d3) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 10px 24px !important;
+            font-weight: bold !important;
+            transition: all 0.3s !important;
+            box-shadow: 0 4px 8px rgba(255, 20, 147, 0.3) !important;
+        }
+        div.stButton > button:first-child:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 12px rgba(255, 20, 147, 0.4) !important;
         }
     </style>
     """, unsafe_allow_html=True)
