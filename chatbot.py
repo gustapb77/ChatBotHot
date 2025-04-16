@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
     # Configurações da API
@@ -27,7 +27,7 @@ class Config:
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
     
-    # URLs de assinatura VIP (NOVO)
+    # URLs de assinatura VIP
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
@@ -40,7 +40,7 @@ class Config:
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
     
-    # Imagens organizadas (NOVO)
+    # Imagens
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -54,7 +54,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (ORIGINAL)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -131,7 +131,7 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ORIGINAL)
+# MODELOS DE DADOS
 # ======================
 class Persona:
     PALOMA = """
@@ -155,7 +155,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -195,7 +195,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO COM BOTÕES DE OFERTA)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -286,7 +286,7 @@ class ApiService:
             }
 
 # ======================
-# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
+# PÁGINAS (ATUALIZADO COM BOTÕES VIP)
 # ======================
 class NewPages:
     @staticmethod
@@ -340,23 +340,18 @@ class NewPages:
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
         st.markdown("---")
-        st.markdown(f"""
+        st.markdown("""
         <div style="text-align: center;">
             <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
-            <a href="{Config.VIP_LINK}" style="
-                background: linear-gradient(45deg, #ff1493, #9400d3);
-                color: white;
-                padding: 12px 30px;
-                border-radius: 30px;
-                text-decoration: none;
-                font-weight: bold;
-                display: inline-block;
-                margin-top: 10px;
-            ">
-                Tornar-se VIP Agora
-            </a>
         </div>
         """, unsafe_allow_html=True)
+
+        if st.button("💎 Tornar-se VIP Agora", 
+                    key="vip_button_home", 
+                    use_container_width=True,
+                    type="primary"):
+            st.session_state.current_page = "offers"
+            st.rerun()
 
         if st.button("← Voltar ao chat", key="back_from_home"):
             st.session_state.current_page = "chat"
@@ -679,7 +674,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ATUALIZADO COM BOTÕES)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
@@ -973,7 +968,7 @@ class UiService:
             """, unsafe_allow_html=True)
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
-                st.session_state.current_page = "vip"
+                st.session_state.current_page = "offers"
                 save_persistent_data()
                 st.rerun()
             
@@ -1020,23 +1015,19 @@ class UiService:
                 """, unsafe_allow_html=True)
         
         st.markdown("---")
-        st.markdown(f"""
+        st.markdown("""
         <div style="text-align: center;">
             <h4>🔓 Desbloqueie acesso completo</h4>
             <p>Assine o plano VIP para ver todos os conteúdos</p>
-            <a href="{Config.VIP_LINK}" style="
-                background: linear-gradient(45deg, #ff1493, #9400d3);
-                color: white;
-                padding: 10px 20px;
-                border-radius: 5px;
-                text-decoration: none;
-                display: inline-block;
-                margin-top: 10px;
-            ">
-                Tornar-se VIP
-            </a>
         </div>
         """, unsafe_allow_html=True)
+
+        if st.button("💎 Tornar-se VIP", 
+                    key="vip_button_gallery", 
+                    use_container_width=True,
+                    type="primary"):
+            st.session_state.current_page = "offers"
+            st.rerun()
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
@@ -1161,7 +1152,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO COM BOTÕES)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -1404,7 +1395,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ORIGINAL)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
     st.markdown("""
