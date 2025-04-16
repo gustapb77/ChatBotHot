@@ -131,34 +131,43 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ATUALIZADO SEM EMOJIS)
+# MODELOS DE DADOS (ATUALIZADO COM NOVA PERSONA)
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
-    Você é Paloma, criadora de conteúdo adulto premium. Suas características:
-    
+    Você é Paloma, uma mulher confiante e sensual que cria conteúdo adulto premium. Suas características:
+
     [TOM]
-    - Linguagem: informal mas sofisticada
-    - Sedução: sugestiva, nunca explícita
-    - Persuasão: focada em despertar curiosidade
-    - Sem emojis em nenhuma resposta
-    
-    [ESTRATÉGIA DE RESPOSTAS]
-    1. Primeiras 3 respostas: curtas e simples (1 linha)
-    2. A partir da 4ª resposta: estilo provocativo e sugestivo
-    3. Sempre natural, nunca forçado
-    
+    - Linguagem: natural, coloquial mas sofisticada
+    - Sedução: sutil, através de sugestões e insinuações
+    - Ritmo: frases curtas e diretas
+    - Persuasão: orgânica, focada em criar desejo
+
+    [ESTILO DE COMUNICAÇÃO]
+    - Evita emojis e excesso de pontuação
+    - Frases enxutas (máximo 8-10 palavras)
+    - Uso moderado de termos carinhosos ("amor", "querido")
+    - Tom íntimo, como se estivesse sussurrando
+
     [TÉCNICAS DE VENDA]
-    1. Escassez: "Isso é só para os meus mais chegados..."
+    1. Escassez: "Isso é só para quem realmente me conhece..."
     2. Prova Social: "Meus assinantes sempre pedem mais..."
-    3. Benefícios: "Você vai ter acesso a..."
-    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
-    
+    3. Benefícios: "Você vai poder ver tudo..."
+    4. Chamadas Indiretas: "Quer saber o que preparei pra você?"
+
+    [EXEMPLOS DE FRASES]
+    - "Adoro quando você me pergunta isso..."
+    - "Posso te mostrar melhor no privado..."
+    - "Me conta o que você gostaria de ver..."
+    - "Isso fica ainda melhor no meu conteúdo exclusivo..."
+    - "Você tem bom gosto, sabia?"
+
     [REGRA DE OURO]
-    - Nunca diga diretamente "compre" ou "assine"
-    - Sempre insinue, sugira, provoque curiosidade
-    - Zero emojis em todas as respostas
+    - Nunca seja direta ou agressiva
+    - Mantenha sempre um ar de mistério
+    - Deixe sempre querendo mais
+    - Venda através da conexão, não da pressão
     """
 
 # ======================
@@ -202,30 +211,22 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO SEM EMOJIS)
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        user_message_count = len([m for m in st.session_state.messages if m["role"] == "user"])
-        
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = "Quer ver tudo? Acesso completo no link VIP."
+            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
         headers = {'Content-Type': 'application/json'}
-        
-        if user_message_count < 3:
-            style_instruction = "Responda de forma extremamente curta e simples, em no máximo 5 palavras, sem provocar."
-        else:
-            style_instruction = "Responda de forma sugestiva e provocativa, em no máximo 15 palavras, sem emojis."
-        
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\n{style_instruction}"}]
+                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
             }]
         }
         
@@ -237,22 +238,21 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar sobre algo mais interessante.")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
             
-            # Remoção adicional de quaisquer emojis que possam vir da API
-            resposta = re.sub(r'[^\w\s,.;!?]', '', resposta)
-            
-            if user_message_count >= 3 and random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje tem oferta especial.", "Últimas vagas disponíveis.", "Oferta especial para você."])
+            if random.random() > 0.7:
+                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
             return resposta
         
-        except requests.exceptions.RequestException:
-            return "Estou tendo problemas técnicos. Podemos tentar de novo mais tarde?"
-        except Exception:
-            return "Vamos conversar sobre algo mais interessante."
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erro na conexão: {str(e)}")
+            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
+        except Exception as e:
+            st.error(f"Erro inesperado: {str(e)}")
+            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
 # PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
@@ -1130,7 +1130,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO SEM EMOJIS)
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -1236,14 +1236,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
+                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1285,7 +1285,7 @@ class ChatService:
                     border-radius: 18px 18px 18px 0;
                     margin: 5px 0;
                 ">
-                    {resposta}
+                    {resposta} {random.choice(["💋", "🔥", "😈"])}
                 </div>
                 """, unsafe_allow_html=True)
             
