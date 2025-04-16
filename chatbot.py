@@ -96,10 +96,8 @@ class PersistentState:
 
 def get_user_id():
     if 'user_id' not in st.session_state:
-        user_id = st.query_params.get('uid', [None])[0]
-        if not user_id:
-            user_id = str(uuid.uuid4())
-            st.query_params['uid'] = user_id
+        user_id = st.query_params.get('uid', str(uuid.uuid4()))
+        st.query_params['uid'] = user_id
         st.session_state.user_id = user_id
     return st.session_state.user_id
 
@@ -215,9 +213,9 @@ class ApiService:
                 "Posso te mostrar coisas incríveis..."
             ])
             
-            btn_oferta = """
+            btn_oferta = f"""
             <div style="margin-top:10px;">
-                <button onclick="window.parent.document.dispatchEvent(new CustomEvent('streamlit:navigate', {detail: {page: 'offers'}}))" style="
+                <button onclick='window.location.href="?page=offers&uid={get_user_id()}"' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
                     color: white;
                     padding: 8px 16px;
@@ -345,7 +343,7 @@ class NewPages:
         """, unsafe_allow_html=True)
 
         if st.button("← Voltar ao chat", key="back_from_home"):
-            st.session_state.current_page = "chat"
+            st.query_params['page'] = "chat"
             st.rerun()
 
     @staticmethod
@@ -661,7 +659,7 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
         if st.button("← Voltar ao chat", key="back_from_offers"):
-            st.session_state.current_page = "chat"
+            st.query_params['page'] = "chat"
             st.rerun()
 
 # ======================
@@ -710,11 +708,11 @@ class UiService:
             </div>
         </div>
         <style>
-            @keyframes pulse-ring {{
-                0% {{ transform: scale(0.95); opacity: 0.8; }}
-                50% {{ transform: scale(1.05); opacity: 1; }}
-                100% {{ transform: scale(0.95); opacity: 0.8; }}
-            }}
+            @keyframes pulse-ring {
+                0% { transform: scale(0.95); opacity: 0.8; }
+                50% { transform: scale(1.05); opacity: 1; }
+                100% { transform: scale(0.95); opacity: 0.8; }
+            }
         </style>
         """, unsafe_allow_html=True)
         
@@ -923,8 +921,7 @@ class UiService:
             
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
-                    st.session_state.current_page = page
-                    save_persistent_data()
+                    st.query_params['page'] = page
                     st.rerun()
             
             st.markdown("---")
@@ -959,8 +956,7 @@ class UiService:
             """, unsafe_allow_html=True)
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
-                st.session_state.current_page = "vip"
-                save_persistent_data()
+                st.query_params['page'] = "vip"
                 st.rerun()
             
             st.markdown("---")
@@ -1025,8 +1021,7 @@ class UiService:
         """, unsafe_allow_html=True)
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
-            st.session_state.current_page = "chat"
-            save_persistent_data()
+            st.query_params['page'] = "chat"
             st.rerun()
 
     @staticmethod
@@ -1036,29 +1031,25 @@ class UiService:
             if st.button("🏠 Início", key="shortcut_home", 
                        help="Voltar para a página inicial",
                        use_container_width=True):
-                st.session_state.current_page = "home"
-                save_persistent_data()
+                st.query_params['page'] = "home"
                 st.rerun()
         with cols[1]:
             if st.button("📸 Galeria", key="shortcut_gallery",
                        help="Acessar galeria privada",
                        use_container_width=True):
-                st.session_state.current_page = "gallery"
-                save_persistent_data()
+                st.query_params['page'] = "gallery"
                 st.rerun()
         with cols[2]:
             if st.button("🎁 Ofertas", key="shortcut_offers",
                        help="Ver ofertas especiais",
                        use_container_width=True):
-                st.session_state.current_page = "offers"
-                save_persistent_data()
+                st.query_params['page'] = "offers"
                 st.rerun()
         with cols[3]:
             if st.button("💎 VIP", key="shortcut_vip",
                        help="Acessar área VIP",
                        use_container_width=True):
-                st.session_state.current_page = "vip"
-                save_persistent_data()
+                st.query_params['page'] = "vip"
                 st.rerun()
 
         st.markdown("""
@@ -1361,20 +1352,19 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Adicione este código no início da função main()
-    st.markdown("""
-    <script>
-    function navigateTo(page) {
-        const event = new CustomEvent('streamlit:navigate', { detail: { page: page } });
-        window.parent.document.dispatchEvent(event);
-    }
-    </script>
-    """, unsafe_allow_html=True)
-    
+    # Inicialização do banco de dados
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
     conn = st.session_state.db_conn
+    
+    # Verificação de parâmetros da URL
+    if 'page' in st.query_params:
+        st.session_state.current_page = st.query_params['page']
+    
+    # Garante que o UID está na URL
+    if 'uid' not in st.query_params:
+        st.query_params['uid'] = str(uuid.uuid4())
     
     st.title("💋 Paloma - Conteúdo Exclusivo")
     
