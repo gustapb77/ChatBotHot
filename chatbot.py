@@ -331,7 +331,7 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        st.subheader("🔍 Prévia do Conteúdo VIP")
+        st.subheader("Prazer, Eu sou a Paloma!")
         cols = st.columns(3)
         
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
@@ -921,7 +921,7 @@ class UiService:
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             st.markdown("---")
-            st.markdown("### 🌟 Menu Exclusivo")
+            st.markdown("### Menu Exclusivo")
             
             menu_options = {
                 "💋 Início": "home",
@@ -1297,7 +1297,7 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "content": "amor... Vou ficar ocupada agora, me manda mensagem depois? "
                 })
                 DatabaseService.save_message(
                     conn,
