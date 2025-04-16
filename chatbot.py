@@ -474,11 +474,11 @@ class NewPages:
                 <small>para iniciantes</small>
             </div>
             <ul class="package-benefits">
-                <li>15 fotos inéditas</li>
-                <li>1 vídeo surpresa (5min)</li>
-                <li>Acesso por 7 dias</li>
-                <li>Chat básico</li>
-                <li>Atualizações semanais</li>
+                <li>10 fotos inéditas</li>
+                <li>3 vídeo íntimos</li>
+                <li>Fotos Peito</li>
+                <li>Fotos Bunda </li>
+                <li>Fotos Buceta</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
                 <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
@@ -509,13 +509,13 @@ class NewPages:
                 <small>experiência completa</small>
             </div>
             <ul class="package-benefits">
-                <li>45 fotos exclusivas</li>
-                <li>5 vídeos premium (10min cada)</li>
-                <li>Acesso por 30 dias</li>
-                <li>Chat prioritário</li>
-                <li>Atualizações diárias</li>
-                <li>1 conteúdo personalizado</li>
-                <li>Lista de desejos VIP</li>
+                <li>20 fotos exclusivas</li>
+                <li>5 vídeos premium</li>
+                <li>Fotos Peito</li>
+                <li>Fotos Bunda</li>
+                <li>Fotos Buceta</li>
+                <li>Fotos Exclusivas</li>
+                <li>Videos Masturbando</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
                 <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
@@ -545,14 +545,14 @@ class NewPages:
                 <small>para verdadeiros fãs</small>
             </div>
             <ul class="package-benefits">
-                <li>100+ fotos ultra-exclusivas</li>
-                <li>15 vídeos HD (15min+ cada)</li>
-                <li>Acesso vitalício</li>
-                <li>Chat 24/7 com prioridade máxima</li>
-                <li>Atualizações em tempo real</li>
-                <li>5 conteúdos personalizados</li>
-                <li>Encontros virtuais mensais</li>
-                <li>Presentes físicos surpresa</li>
+                <li>30 fotos ultra-exclusivas</li>
+                <li>10 Videos Exclusivos</li>
+                <li>Fotos Peito</li>
+                <li>Fotos Bunda</li>
+                <li>Fotos Buceta</li>
+                <li>Fotos Exclusivas</li>
+                <li>Videos MAasturbando</li>
+                <li>Videos Transando</li>
                 <li>Acesso a conteúdos futuros</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
