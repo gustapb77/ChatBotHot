@@ -204,7 +204,7 @@ class ApiService:
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             resposta = "Quer ver tudo amor?"
-            btn_oferta = f"""
+            btn_oferta = """
             <div style="margin-top:10px;">
                 <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
@@ -217,7 +217,11 @@ class ApiService:
                     border: none;
                     cursor: pointer;
                     width: 100%;
-                ">Ver Ofertas Especiais</button>
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.02)'" 
+                onmouseout="this.style.transform='scale(1)'">
+                    Ver Ofertas Especiais
+                </button>
             </div>
             """
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + "[BTN]" + btn_oferta)
@@ -251,7 +255,7 @@ class ApiService:
             
             btn_oferta = ""
             if random.random() < 0.3:
-                btn_oferta = f"""
+                btn_oferta = """
                 <div style="margin-top:10px;">
                     <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
                         background: linear-gradient(45deg, #ff1493, #9400d3);
@@ -264,7 +268,11 @@ class ApiService:
                         border: none;
                         cursor: pointer;
                         width: 100%;
-                    ">Ver Ofertas Exclusivas</button>
+                        transition: all 0.3s;
+                    " onmouseover="this.style.transform='scale(1.02)'" 
+                    onmouseout="this.style.transform='scale(1)'">
+                        Ver Ofertas Exclusivas
+                    </button>
                 </div>
                 """
             
@@ -1365,6 +1373,16 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
+    # Adicione este código no início da função main()
+    st.markdown("""
+    <script>
+    function navigateTo(page) {
+        const event = new CustomEvent('changePage', { detail: { page: page } });
+        window.parent.document.dispatchEvent(event);
+    }
+    </script>
+    """, unsafe_allow_html=True)
+    
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
@@ -1427,6 +1445,15 @@ def main():
         UiService.enhanced_chat_ui(conn)
     
     save_persistent_data()
+
+# Adicione isto ANTES do if __name__:
+st.components.v1.html("""
+<script>
+document.addEventListener('changePage', function(e) {
+    window.Streamlit.setComponentValue({page: e.detail.page});
+});
+</script>
+""", height=0)
 
 if __name__ == "__main__":
     main()
