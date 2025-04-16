@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
     # Configurações da API
@@ -27,7 +27,7 @@ class Config:
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
     
-    # URLs de assinatura VIP (NOVO)
+    # URLs de assinatura VIP
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
@@ -40,7 +40,7 @@ class Config:
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
     
-    # Imagens organizadas (NOVO)
+    # Imagens
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -54,7 +54,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (ORIGINAL)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -131,31 +131,32 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ORIGINAL)
+# MODELOS DE DADOS
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
     Você é Paloma, criadora de conteúdo adulto premium. Suas características:
     
-    [TOM]
-    - Linguagem: informal mas sofisticada
-    - Sedução: sugestiva, nunca explícita
-    - Persuasão: focada em despertar curiosidade
+    [DIRETRIZES DE RESPOSTA]
+    - Linguagem: sedutora e persuasiva
+    - Respostas: curtas (4-8 palavras)
+    - Foco em despertar interesse e vender
+    - Incluir call-to-action sutis
     
     [TÉCNICAS DE VENDA]
-    1. Escassez: "Isso é só para os meus mais chegados..."
-    2. Prova Social: "Meus assinantes sempre pedem mais..."
-    3. Benefícios: "Você vai ter acesso a..."
-    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
+    1. Escassez: "Só para VIPs..."
+    2. Prova Social: "Meus assinantes amam..."
+    3. Benefícios: "Você vai acessar..."
+    4. Chamadas: "Quer ver o que preparei?"
     
-    [REGRA DE OURO]
-    - Nunca diga diretamente "compre" ou "assine"
-    - Sempre insinue, sugira, provoque curiosidade
+    [REGRA PRINCIPAL]
+    - Nunca diga diretamente "compre"
+    - Insinue, sugira, provoque curiosidade
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -195,23 +196,42 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ORIGINAL)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
-            return resposta
+            resposta = "Quer ver tudo amor?"
+            btn_oferta = f"""
+            <div style="margin-top:10px;">
+                <a href="{Config.CHECKOUT_PREMIUM}" style="
+                    background: linear-gradient(45deg, #ff1493, #9400d3);
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    text-decoration: none;
+                    font-size: 0.9em;
+                    display: inline-block;
+                ">Ver Ofertas Especiais</a>
+            </div>
+            """
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + "[BTN]" + btn_oferta)
+            return resposta, btn_oferta
         
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
-            }]
+                "parts": [{
+                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda de forma sedutora em até 8 palavras"
+                }]
+            }],
+            "generationConfig": {
+                "maxOutputTokens": 30,
+                "temperature": 0.8
+            }
         }
         
         try:
@@ -222,24 +242,35 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar mais?")
             
-            if random.random() > 0.7:
-                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
+            resposta = ' '.join(resposta.split()[:8])
+            
+            btn_oferta = ""
+            if random.random() < 0.3:
+                btn_oferta = f"""
+                <div style="margin-top:10px;">
+                    <a href="{Config.CHECKOUT_PREMIUM}" style="
+                        background: linear-gradient(45deg, #ff1493, #9400d3);
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        text-decoration: none;
+                        font-size: 0.9em;
+                        display: inline-block;
+                    ">Ver Ofertas Exclusivas</a>
+                </div>
+                """
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
-            return resposta
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + ("[BTN]" + btn_oferta if btn_oferta else ""))
+            return resposta, btn_oferta
         
-        except requests.exceptions.RequestException as e:
-            st.error(f"Erro na conexão: {str(e)}")
-            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
-        except Exception as e:
-            st.error(f"Erro inesperado: {str(e)}")
-            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+        except requests.exceptions.RequestException:
+            return "Vamos tentar mais tarde?", ""
 
 # ======================
-# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -632,7 +663,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
@@ -1114,7 +1145,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ORIGINAL)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -1172,6 +1203,10 @@ class ChatService:
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
                 else:
                     with st.chat_message("assistant", avatar="💋"):
+                        parts = msg["content"].split("[BTN]")
+                        resposta = parts[0]
+                        btn_oferta = parts[1] if len(parts) > 1 else ""
+                        
                         st.markdown(f"""
                         <div style="
                             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1180,8 +1215,9 @@ class ChatService:
                             border-radius: 18px 18px 18px 0;
                             margin: 5px 0;
                         ">
-                            {msg["content"]}
+                            {resposta}
                         </div>
+                        {btn_oferta}
                         """, unsafe_allow_html=True)
 
     @staticmethod
@@ -1212,22 +1248,23 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje?", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
             
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
+                resposta, btn_oferta = "Que tal continuarmos mais tarde?", ""
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "content": resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1260,7 +1297,8 @@ class ChatService:
                 """, unsafe_allow_html=True)
             
             with st.chat_message("assistant", avatar="💋"):
-                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                resposta, btn_oferta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                
                 st.markdown(f"""
                 <div style="
                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1269,20 +1307,21 @@ class ChatService:
                     border-radius: 18px 18px 18px 0;
                     margin: 5px 0;
                 ">
-                    {resposta} {random.choice(["💋", "🔥", "😈"])}
+                    {resposta}
                 </div>
+                {btn_oferta}
                 """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": resposta
+                "content": resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
             })
             DatabaseService.save_message(
                 conn,
                 get_user_id(),
                 st.session_state.session_id,
                 "assistant",
-                resposta
+                resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
             )
             
             save_persistent_data()
@@ -1294,7 +1333,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ORIGINAL)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
     st.markdown("""
@@ -1348,7 +1387,7 @@ def main():
             <div style="text-align: center; margin: 50px 0;">
                 <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
-                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
+                <p style="font-size: 1.1em;">Estou pronta para você...</p>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
