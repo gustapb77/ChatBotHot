@@ -206,7 +206,7 @@ class ApiService:
             resposta = "Quer ver tudo amor?"
             btn_oferta = f"""
             <div style="margin-top:10px;">
-                <a href="{Config.CHECKOUT_PREMIUM}" style="
+                <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
                     color: white;
                     padding: 8px 16px;
@@ -214,7 +214,10 @@ class ApiService:
                     text-decoration: none;
                     font-size: 0.9em;
                     display: inline-block;
-                ">Ver Ofertas Especiais</a>
+                    border: none;
+                    cursor: pointer;
+                    width: 100%;
+                ">Ver Ofertas Especiais</button>
             </div>
             """
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + "[BTN]" + btn_oferta)
@@ -250,7 +253,7 @@ class ApiService:
             if random.random() < 0.3:
                 btn_oferta = f"""
                 <div style="margin-top:10px;">
-                    <a href="{Config.CHECKOUT_PREMIUM}" style="
+                    <button onclick='window.parent.document.querySelector("button[data-testid=\'baseButton-secondary\']").click()' style="
                         background: linear-gradient(45deg, #ff1493, #9400d3);
                         color: white;
                         padding: 8px 16px;
@@ -258,7 +261,10 @@ class ApiService:
                         text-decoration: none;
                         font-size: 0.9em;
                         display: inline-block;
-                    ">Ver Ofertas Exclusivas</a>
+                        border: none;
+                        cursor: pointer;
+                        width: 100%;
+                    ">Ver Ofertas Exclusivas</button>
                 </div>
                 """
             
