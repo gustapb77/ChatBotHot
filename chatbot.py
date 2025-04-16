@@ -217,7 +217,7 @@ class ApiService:
             
             btn_oferta = f"""
             <div style="margin-top:10px;">
-                <button onclick='window.parent.document.dispatchEvent(new CustomEvent("OFFER_BUTTON_CLICK"))' style="
+                <button onclick='window.location.href="?current_page=offers&uid={get_user_id()}"' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
                     color: white;
                     padding: 8px 16px;
@@ -346,6 +346,7 @@ class NewPages:
 
         if st.button("← Voltar ao chat", key="back_from_home"):
             st.session_state.current_page = "chat"
+            st.experimental_set_query_params(current_page="chat")
             st.rerun()
 
     @staticmethod
@@ -662,6 +663,7 @@ class NewPages:
 
         if st.button("← Voltar ao chat", key="back_from_offers"):
             st.session_state.current_page = "chat"
+            st.experimental_set_query_params(current_page="chat")
             st.rerun()
 
 # ======================
@@ -924,6 +926,7 @@ class UiService:
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
                     st.session_state.current_page = page
+                    st.experimental_set_query_params(current_page=page)
                     save_persistent_data()
                     st.rerun()
             
@@ -960,6 +963,7 @@ class UiService:
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
                 st.session_state.current_page = "vip"
+                st.experimental_set_query_params(current_page="vip")
                 save_persistent_data()
                 st.rerun()
             
@@ -1026,6 +1030,7 @@ class UiService:
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
+            st.experimental_set_query_params(current_page="chat")
             save_persistent_data()
             st.rerun()
 
@@ -1037,6 +1042,7 @@ class UiService:
                        help="Voltar para a página inicial",
                        use_container_width=True):
                 st.session_state.current_page = "home"
+                st.experimental_set_query_params(current_page="home")
                 save_persistent_data()
                 st.rerun()
         with cols[1]:
@@ -1044,6 +1050,7 @@ class UiService:
                        help="Acessar galeria privada",
                        use_container_width=True):
                 st.session_state.current_page = "gallery"
+                st.experimental_set_query_params(current_page="gallery")
                 save_persistent_data()
                 st.rerun()
         with cols[2]:
@@ -1051,6 +1058,7 @@ class UiService:
                        help="Ver ofertas especiais",
                        use_container_width=True):
                 st.session_state.current_page = "offers"
+                st.experimental_set_query_params(current_page="offers")
                 save_persistent_data()
                 st.rerun()
         with cols[3]:
@@ -1058,6 +1066,7 @@ class UiService:
                        help="Acessar área VIP",
                        use_container_width=True):
                 st.session_state.current_page = "vip"
+                st.experimental_set_query_params(current_page="vip")
                 save_persistent_data()
                 st.rerun()
 
@@ -1338,41 +1347,9 @@ class ChatService:
 # APLICAÇÃO PRINCIPAL
 # ======================
 def main():
-    # Adicione este trecho ANTES de tudo:
-    if 'offer_listener' not in st.session_state:
-        st.session_state.offer_listener = True
-        st.components.v1.html("""
-        <script>
-            window.addEventListener('load', () => {
-                window.parent.document.addEventListener('OFFER_BUTTON_CLICK', () => {
-                    window.parent.document.querySelector('button[kind="secondary"]').click();
-                });
-            });
-        </script>
-        """, height=0)
-    
-    st.markdown("""
-    <style>
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
-            border-right: 1px solid #ff66b3 !important;
-        }
-        .stButton button {
-            background: rgba(255, 20, 147, 0.2) !important;
-            color: white !important;
-            border: 1px solid #ff66b3 !important;
-            transition: all 0.3s !important;
-        }
-        .stButton button:hover {
-            background: rgba(255, 20, 147, 0.4) !important;
-            transform: translateY(-2px) !important;
-        }
-        [data-testid="stChatInput"] {
-            background: rgba(255, 102, 179, 0.1) !important;
-            border: 1px solid #ff66b3 !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Verifica parâmetros da URL primeiro
+    if 'current_page' in st.query_params:
+        st.session_state.current_page = st.query_params['current_page']
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
@@ -1412,6 +1389,7 @@ def main():
                     'current_page': 'chat',
                     'audio_sent': False
                 })
+                st.experimental_set_query_params(current_page="chat")
                 save_persistent_data()
                 st.rerun()
         st.stop()
@@ -1430,27 +1408,13 @@ def main():
         st.warning("Página VIP em desenvolvimento")
         if st.button("← Voltar ao chat"):
             st.session_state.show_vip_offer = False
+            st.experimental_set_query_params(current_page="chat")
             save_persistent_data()
             st.rerun()
     else:
         UiService.enhanced_chat_ui(conn)
     
-    # Verifique se recebemos evento do botão de ofertas
-    if st.session_state.get("offer_clicked", False):
-        st.session_state.current_page = "offers"
-        st.session_state.offer_clicked = False
-        st.rerun()
-    
     save_persistent_data()
-
-# Adicione isto ANTES do if __name__:
-st.components.v1.html("""
-<script>
-document.addEventListener('changePage', function(e) {
-    window.Streamlit.setComponentValue({page: e.detail.page});
-});
-</script>
-""", height=0)
 
 if __name__ == "__main__":
     main()
