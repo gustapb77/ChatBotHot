@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
 # ======================
 class Config:
     # Configurações da API
@@ -27,7 +27,7 @@ class Config:
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
     
-    # URLs de assinatura VIP
+    # URLs de assinatura VIP (NOVO)
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
@@ -40,7 +40,7 @@ class Config:
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
     
-    # Imagens
+    # Imagens organizadas (NOVO)
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -54,7 +54,7 @@ class Config:
     ]
 
 # ======================
-# PERSISTÊNCIA DE ESTADO
+# PERSISTÊNCIA DE ESTADO (ORIGINAL)
 # ======================
 class PersistentState:
     _instance = None
@@ -96,8 +96,10 @@ class PersistentState:
 
 def get_user_id():
     if 'user_id' not in st.session_state:
-        user_id = st.query_params.get('uid', str(uuid.uuid4()))
-        st.query_params['uid'] = user_id
+        user_id = st.query_params.get('uid', [None])[0]
+        if not user_id:
+            user_id = str(uuid.uuid4())
+            st.query_params['uid'] = user_id
         st.session_state.user_id = user_id
     return st.session_state.user_id
 
@@ -129,32 +131,31 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS
+# MODELOS DE DADOS (ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
     [CONFIGURAÇÃO DA PERSONALIDADE]
     Você é Paloma, criadora de conteúdo adulto premium. Suas características:
     
-    [DIRETRIZES DE RESPOSTA]
-    - Linguagem: sedutora e persuasiva
-    - Respostas: curtas (4-8 palavras)
-    - Foco em despertar interesse e vender
-    - Incluir call-to-action sutis
+    [TOM]
+    - Linguagem: informal mas sofisticada
+    - Sedução: sugestiva, nunca explícita
+    - Persuasão: focada em despertar curiosidade
     
     [TÉCNICAS DE VENDA]
-    1. Escassez: "Só para VIPs..."
-    2. Prova Social: "Meus assinantes amam..."
-    3. Benefícios: "Você vai acessar..."
-    4. Chamadas: "Quer ver o que preparei?"
+    1. Escassez: "Isso é só para os meus mais chegados..."
+    2. Prova Social: "Meus assinantes sempre pedem mais..."
+    3. Benefícios: "Você vai ter acesso a..."
+    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
     
-    [REGRA PRINCIPAL]
-    - Nunca diga diretamente "compre"
-    - Insinue, sugira, provoque curiosidade
+    [REGRA DE OURO]
+    - Nunca diga diretamente "compre" ou "assine"
+    - Sempre insinue, sugira, provoque curiosidade
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (ORIGINAL)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -194,60 +195,23 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (ORIGINAL)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # Verifica interesse do usuário (palavras-chave)
-        interesse = any(word in prompt.lower() for word in 
-                       ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua", "conteúdo", "ver mais", "quero ver"])
-        
-        if interesse:
+        if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            
-            resposta = random.choice([
-                "Quer ver tudo amor?",
-                "Tenho muito mais pra te mostrar...",
-                "Só pros meus VIPs, querido...",
-                "Posso te mostrar coisas incríveis..."
-            ])
-            
-            btn_oferta = f"""
-            <div style="margin-top:10px;">
-                <button onclick='window.location.href="?page=offers&uid={get_user_id()}"' style="
-                    background: linear-gradient(45deg, #ff1493, #9400d3);
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    text-decoration: none;
-                    font-size: 0.9em;
-                    display: inline-block;
-                    border: none;
-                    cursor: pointer;
-                    width: 100%;
-                    transition: all 0.3s;
-                " onmouseover="this.style.transform='scale(1.02)'" 
-                onmouseout="this.style.transform='scale(1)'">
-                    🔓 Ver Ofertas Exclusivas
-                </button>
-            </div>
-            """
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta + "[BTN]" + btn_oferta)
-            return resposta, btn_oferta
+            resposta = f"Quer ver tudo amor? 💋 {Config.VIP_LINK}"
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
+            return resposta
         
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{
-                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda de forma sedutora em até 8 palavras"
-                }]
-            }],
-            "generationConfig": {
-                "maxOutputTokens": 30,
-                "temperature": 0.8
-            }
+                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+            }]
         }
         
         try:
@@ -258,19 +222,24 @@ class ApiService:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Vamos conversar mais?")
+            resposta = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
             
-            resposta = ' '.join(resposta.split()[:8])
+            if random.random() > 0.7:
+                resposta += " " + random.choice(["Só hoje...", "Últimas vagas!", "Oferta especial 😉"])
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta)
-            return resposta, ""
+            return resposta
         
-        except requests.exceptions.RequestException:
-            return "Vamos tentar mais tarde?", ""
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erro na conexão: {str(e)}")
+            return "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋"
+        except Exception as e:
+            st.error(f"Erro inesperado: {str(e)}")
+            return "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
 
 # ======================
-# PÁGINAS
+# PÁGINAS (ATUALIZADO COM LINKS ORGANIZADOS)
 # ======================
 class NewPages:
     @staticmethod
@@ -343,7 +312,7 @@ class NewPages:
         """, unsafe_allow_html=True)
 
         if st.button("← Voltar ao chat", key="back_from_home"):
-            st.query_params['page'] = "chat"
+            st.session_state.current_page = "chat"
             st.rerun()
 
     @staticmethod
@@ -659,11 +628,11 @@ class NewPages:
                 """, unsafe_allow_html=True)
 
         if st.button("← Voltar ao chat", key="back_from_offers"):
-            st.query_params['page'] = "chat"
+            st.session_state.current_page = "chat"
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (ORIGINAL COM IMAGENS ATUALIZADAS)
 # ======================
 class UiService:
     @staticmethod
@@ -708,11 +677,11 @@ class UiService:
             </div>
         </div>
         <style>
-            @keyframes pulse-ring {
-                0% { transform: scale(0.95); opacity: 0.8; }
-                50% { transform: scale(1.05); opacity: 1; }
-                100% { transform: scale(0.95); opacity: 0.8; }
-            }
+            @keyframes pulse-ring {{
+                0% {{ transform: scale(0.95); opacity: 0.8; }}
+                50% {{ transform: scale(1.05); opacity: 1; }}
+                100% {{ transform: scale(0.95); opacity: 0.8; }}
+            }}
         </style>
         """, unsafe_allow_html=True)
         
@@ -921,7 +890,8 @@ class UiService:
             
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
-                    st.query_params['page'] = page
+                    st.session_state.current_page = page
+                    save_persistent_data()
                     st.rerun()
             
             st.markdown("---")
@@ -956,7 +926,8 @@ class UiService:
             """, unsafe_allow_html=True)
             
             if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
-                st.query_params['page'] = "vip"
+                st.session_state.current_page = "vip"
+                save_persistent_data()
                 st.rerun()
             
             st.markdown("---")
@@ -1021,7 +992,8 @@ class UiService:
         """, unsafe_allow_html=True)
         
         if st.button("← Voltar ao chat", key="back_from_gallery"):
-            st.query_params['page'] = "chat"
+            st.session_state.current_page = "chat"
+            save_persistent_data()
             st.rerun()
 
     @staticmethod
@@ -1031,25 +1003,29 @@ class UiService:
             if st.button("🏠 Início", key="shortcut_home", 
                        help="Voltar para a página inicial",
                        use_container_width=True):
-                st.query_params['page'] = "home"
+                st.session_state.current_page = "home"
+                save_persistent_data()
                 st.rerun()
         with cols[1]:
             if st.button("📸 Galeria", key="shortcut_gallery",
                        help="Acessar galeria privada",
                        use_container_width=True):
-                st.query_params['page'] = "gallery"
+                st.session_state.current_page = "gallery"
+                save_persistent_data()
                 st.rerun()
         with cols[2]:
             if st.button("🎁 Ofertas", key="shortcut_offers",
                        help="Ver ofertas especiais",
                        use_container_width=True):
-                st.query_params['page'] = "offers"
+                st.session_state.current_page = "offers"
+                save_persistent_data()
                 st.rerun()
         with cols[3]:
             if st.button("💎 VIP", key="shortcut_vip",
                        help="Acessar área VIP",
                        use_container_width=True):
-                st.query_params['page'] = "vip"
+                st.session_state.current_page = "vip"
+                save_persistent_data()
                 st.rerun()
 
         st.markdown("""
@@ -1138,7 +1114,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -1196,10 +1172,6 @@ class ChatService:
                         st.markdown(UiService.get_chat_audio_player(), unsafe_allow_html=True)
                 else:
                     with st.chat_message("assistant", avatar="💋"):
-                        parts = msg["content"].split("[BTN]")
-                        resposta = parts[0]
-                        btn_oferta = parts[1] if len(parts) > 1 else ""
-                        
                         st.markdown(f"""
                         <div style="
                             background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1208,9 +1180,8 @@ class ChatService:
                             border-radius: 18px 18px 18px 0;
                             margin: 5px 0;
                         ">
-                            {resposta}
+                            {msg["content"]}
                         </div>
-                        {btn_oferta}
                         """, unsafe_allow_html=True)
 
     @staticmethod
@@ -1241,23 +1212,22 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje?", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
             
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
-                resposta, btn_oferta = "Que tal continuarmos mais tarde?", ""
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
+                    "content": "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1290,8 +1260,7 @@ class ChatService:
                 """, unsafe_allow_html=True)
             
             with st.chat_message("assistant", avatar="💋"):
-                resposta, btn_oferta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                
+                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
                 st.markdown(f"""
                 <div style="
                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1300,21 +1269,20 @@ class ChatService:
                     border-radius: 18px 18px 18px 0;
                     margin: 5px 0;
                 ">
-                    {resposta}
+                    {resposta} {random.choice(["💋", "🔥", "😈"])}
                 </div>
-                {btn_oferta}
                 """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
+                "content": resposta
             })
             DatabaseService.save_message(
                 conn,
                 get_user_id(),
                 st.session_state.session_id,
                 "assistant",
-                resposta + ("[BTN]" + btn_oferta if btn_oferta else "")
+                resposta
             )
             
             save_persistent_data()
@@ -1326,7 +1294,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (ORIGINAL)
 # ======================
 def main():
     st.markdown("""
@@ -1352,19 +1320,10 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Inicialização do banco de dados
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
     conn = st.session_state.db_conn
-    
-    # Verificação de parâmetros da URL
-    if 'page' in st.query_params:
-        st.session_state.current_page = st.query_params['page']
-    
-    # Garante que o UID está na URL
-    if 'uid' not in st.query_params:
-        st.query_params['uid'] = str(uuid.uuid4())
     
     st.title("💋 Paloma - Conteúdo Exclusivo")
     
@@ -1389,7 +1348,7 @@ def main():
             <div style="text-align: center; margin: 50px 0;">
                 <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
-                <p style="font-size: 1.1em;">Estou pronta para você...</p>
+                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
