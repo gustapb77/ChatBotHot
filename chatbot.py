@@ -215,9 +215,9 @@ class ApiService:
                 "Posso te mostrar coisas incríveis..."
             ])
             
-            btn_oferta = """
+            btn_oferta = f"""
             <div style="margin-top:10px;">
-                <button onclick='window.parent.document.dispatchEvent(new CustomEvent("changePage", {detail: {page: "offers"}}))' style="
+                <button onclick='window.parent.document.dispatchEvent(new CustomEvent("OFFER_BUTTON_CLICK"))' style="
                     background: linear-gradient(45deg, #ff1493, #9400d3);
                     color: white;
                     padding: 8px 16px;
@@ -1338,6 +1338,19 @@ class ChatService:
 # APLICAÇÃO PRINCIPAL
 # ======================
 def main():
+    # Adicione este trecho ANTES de tudo:
+    if 'offer_listener' not in st.session_state:
+        st.session_state.offer_listener = True
+        st.components.v1.html("""
+        <script>
+            window.addEventListener('load', () => {
+                window.parent.document.addEventListener('OFFER_BUTTON_CLICK', () => {
+                    window.parent.document.querySelector('button[kind="secondary"]').click();
+                });
+            });
+        </script>
+        """, height=0)
+    
     st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -1359,16 +1372,6 @@ def main():
             border: 1px solid #ff66b3 !important;
         }
     </style>
-    """, unsafe_allow_html=True)
-    
-    # Adicione este código no início da função main()
-    st.markdown("""
-    <script>
-    function navigateTo(page) {
-        const event = new CustomEvent('changePage', { detail: { page: page } });
-        window.parent.document.dispatchEvent(event);
-    }
-    </script>
     """, unsafe_allow_html=True)
     
     if 'db_conn' not in st.session_state:
@@ -1431,6 +1434,12 @@ def main():
             st.rerun()
     else:
         UiService.enhanced_chat_ui(conn)
+    
+    # Verifique se recebemos evento do botão de ofertas
+    if st.session_state.get("offer_clicked", False):
+        st.session_state.current_page = "offers"
+        st.session_state.offer_clicked = False
+        st.rerun()
     
     save_persistent_data()
 
