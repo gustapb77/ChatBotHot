@@ -10,6 +10,7 @@ import sqlite3
 import re
 import os
 import uuid
+import math  # Adicionado para o efeito de pulsar
 from datetime import datetime
 from pathlib import Path
 
@@ -674,9 +675,131 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (ATUALIZADO COM NOVO EFEITO DE LIGAÇÃO)
 # ======================
 class UiService:
+    @staticmethod
+    def show_pro_call_effect():
+        """Efeito de ligação profissional (2 estágios)"""
+        RINGING_DURATION = 5  # Tempo da fase "chamando"
+        ANSWERED_DURATION = 3  # Tempo da fase "atendida"
+
+        call_container = st.empty()
+        
+        # ---- FASE 1: CHAMANDO ---- #
+        start_time = time.time()
+        while time.time() - start_time < RINGING_DURATION:
+            ring_size = 120 + 10 * math.sin(time.time() * 5)  # Efeito de pulsar
+            
+            call_container.markdown(f"""
+            <div style="
+                background: #000;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+            ">
+                <div style="
+                    width: {ring_size}px;
+                    height: {ring_size}px;
+                    border-radius: 50%;
+                    border: 4px solid #ff66b3;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 30px;
+                    animation: ring 1.5s infinite;
+                ">
+                    <span style="font-size: 50px;">📱</span>
+                </div>
+                
+                <h2 style="color: #ff66b3; margin-bottom: 5px;">CHAMANDO PALOMA...</h2>
+                <p style="color: #aaa; margin-top: 0;">{int(RINGING_DURATION - (time.time() - start_time))}s</p>
+                
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-top: 20px;
+                    color: #4CAF50;
+                    font-size: 0.9em;
+                ">
+                    <div style="
+                        width: 10px;
+                        height: 10px;
+                        background: #4CAF50;
+                        border-radius: 50%;
+                    "></div>
+                    <span>Disponível • Conexão segura</span>
+                </div>
+            </div>
+
+            <style>
+                @keyframes ring {{
+                    0% {{ box-shadow: 0 0 0 0 rgba(255, 102, 179, 0.7); }}
+                    70% {{ box-shadow: 0 0 0 15px rgba(255, 102, 179, 0); }}
+                    100% {{ box-shadow: 0 0 0 0 rgba(255, 102, 179, 0); }}
+                }}
+            </style>
+            """, unsafe_allow_html=True)
+            time.sleep(0.1)
+        
+        # ---- FASE 2: ATENDIDA ---- #
+        call_container.markdown(f"""
+        <div style="
+            background: #000;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            animation: fadeIn 0.5s;
+        ">
+            <div style="
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                background: linear-gradient(45deg, #1e0033, #3c0066);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 30px;
+                border: 3px solid #4CAF50;
+            ">
+                <img src="{Config.IMG_PROFILE}" 
+                     style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover;">
+            </div>
+            
+            <h2 style="color: #4CAF50; margin-bottom: 5px;">✓ CHAMADA ATENDIDA</h2>
+            <p style="color: #aaa; margin-top: 0;">Paloma está pronta para você</p>
+            
+            <div style="
+                margin-top: 30px;
+                background: rgba(255, 102, 179, 0.2);
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 0.9em;
+            ">
+                <span style="color: #ff66b3;">● AO VIVO</span>
+            </div>
+        </div>
+
+        <style>
+            @keyframes fadeIn {{
+                from {{ opacity: 0; }}
+                to {{ opacity: 1; }}
+            }}
+        </style>
+        """, unsafe_allow_html=True)
+        time.sleep(ANSWERED_DURATION)
+        
+        call_container.empty()
+
     @staticmethod
     def get_chat_audio_player():
         return f"""
@@ -691,63 +814,6 @@ class UiService:
             </audio>
         </div>
         """
-
-    @staticmethod
-    def show_call_effect():
-        LIGANDO_DELAY = 5
-        ATENDIDA_DELAY = 3
-
-        call_container = st.empty()
-        call_container.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1e0033, #3c0066);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 300px;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid #ff66b3;
-            text-align: center;
-            color: white;
-            animation: pulse-ring 2s infinite;
-        ">
-            <div style="font-size: 3rem;">📱</div>
-            <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
-                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
-                <span style="font-size: 0.9rem;">Online agora</span>
-            </div>
-        </div>
-        <style>
-            @keyframes pulse-ring {{
-                0% {{ transform: scale(0.95); opacity: 0.8; }}
-                50% {{ transform: scale(1.05); opacity: 1; }}
-                100% {{ transform: scale(0.95); opacity: 0.8; }}
-            }}
-        </style>
-        """, unsafe_allow_html=True)
-        
-        time.sleep(LIGANDO_DELAY)
-        call_container.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1e0033, #3c0066);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 300px;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid #4CAF50;
-            text-align: center;
-            color: white;
-        ">
-            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
-            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
-            <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        time.sleep(ATENDIDA_DELAY)
-        call_container.empty()
 
     @staticmethod
     def show_status_effect(container, status_type):
@@ -1395,7 +1461,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (ATUALIZADA COM NOVO EFEITO DE LIGAÇÃO)
 # ======================
 def main():
     st.markdown("""
@@ -1432,6 +1498,9 @@ def main():
             transform: translateY(-2px) !important;
             box-shadow: 0 6px 12px rgba(255, 20, 147, 0.4) !important;
         }
+        .stApp {
+            overflow: hidden !important;  /* Evita scroll durante o efeito de ligação */
+        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -1451,7 +1520,7 @@ def main():
     UiService.setup_sidebar()
     
     if not st.session_state.connection_complete:
-        UiService.show_call_effect()
+        UiService.show_pro_call_effect()  # ✅ NOVO EFEITO DE LIGAÇÃO (2 estágios)
         st.session_state.connection_complete = True
         save_persistent_data()
         st.rerun()
