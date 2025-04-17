@@ -179,7 +179,7 @@ class DatabaseService:
             c = conn.cursor()
             c.execute("""
                 INSERT INTO conversations (user_id, session_id, timestamp, role, content)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?)
             """, (user_id, session_id, datetime.now(), role, content))
             conn.commit()
         except sqlite3.Error as e:
