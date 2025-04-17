@@ -694,137 +694,60 @@ class UiService:
 
     @staticmethod
     def show_call_effect():
-        # Container principal que será atualizado
+        LIGANDO_DELAY = 5
+        ATENDIDA_DELAY = 3
+
         call_container = st.empty()
-        
-        # Fase 1: Efeito de chamada (3 segundos)
-        call_container.markdown("""
-        <style>
-            @keyframes pulse {
-                0% { transform: scale(1); opacity: 0.9; }
-                50% { transform: scale(1.05); opacity: 1; }
-                100% { transform: scale(1); opacity: 0.9; }
-            }
-            @keyframes ring {
-                0% { transform: rotate(-10deg); }
-                50% { transform: rotate(10deg); }
-                100% { transform: rotate(-10deg); }
-            }
-            .call-screen {
-                background: linear-gradient(135deg, #1e0033, #3c0066);
-                border-radius: 20px;
-                padding: 30px;
-                max-width: 300px;
-                margin: 0 auto;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                border: 2px solid #ff66b3;
-                text-align: center;
-                color: white;
-                animation: pulse 2s infinite;
-            }
-            .call-icon {
-                font-size: 3.5rem;
-                margin-bottom: 15px;
-                display: inline-block;
-                animation: ring 0.5s infinite alternate;
-                transform-origin: center top;
-            }
-            .call-title {
-                color: #ff66b3;
-                margin-bottom: 10px;
-                font-size: 1.3rem;
-            }
-            .call-status {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                margin-top: 15px;
-                font-size: 0.9rem;
-            }
-            .status-dot {
-                width: 10px;
-                height: 10px;
-                background: #4CAF50;
-                border-radius: 50%;
-                animation: pulse 1.5s infinite;
-            }
-        </style>
-        
-        <div class="call-screen">
-            <div class="call-icon">📱</div>
-            <h3 class="call-title">Conectando...</h3>
-            <p>Estabelecendo conexão com Paloma</p>
-            <div class="call-status">
-                <div class="status-dot"></div>
-                <span>Online agora</span>
+        call_container.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #ff66b3;
+            text-align: center;
+            color: white;
+            animation: pulse-ring 2s infinite;
+        ">
+            <div style="font-size: 3rem;">📱</div>
+            <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
+                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
+                <span style="font-size: 0.9rem;">Online agora</span>
             </div>
         </div>
+        <style>
+            @keyframes pulse-ring {{
+                0% {{ transform: scale(0.95); opacity: 0.8; }}
+                50% {{ transform: scale(1.05); opacity: 1; }}
+                100% {{ transform: scale(0.95); opacity: 0.8; }}
+            }}
+        </style>
         """, unsafe_allow_html=True)
         
-        time.sleep(3)  # Duração da fase de chamada
-        
-        # Fase 2: Conexão estabelecida (2 segundos)
-        call_container.markdown("""
-        <style>
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .connected-screen {
-                background: linear-gradient(135deg, #1e0033, #3c0066);
-                border-radius: 20px;
-                padding: 30px;
-                max-width: 300px;
-                margin: 0 auto;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                border: 2px solid #4CAF50;
-                text-align: center;
-                color: white;
-                animation: fadeIn 0.5s forwards;
-            }
-            .connected-icon {
-                font-size: 3.5rem;
-                margin-bottom: 15px;
-                color: #4CAF50;
-            }
-            .connected-title {
-                color: #4CAF50;
-                margin-bottom: 5px;
-                font-size: 1.3rem;
-            }
-        </style>
-        
-        <div class="connected-screen">
-            <div class="connected-icon">✓</div>
-            <h3 class="connected-title">Conexão estabelecida!</h3>
-            <p style="opacity: 0.8;">Paloma está pronta para conversar</p>
+        time.sleep(LIGANDO_DELAY)
+        call_container.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e0033, #3c0066);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 300px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid #4CAF50;
+            text-align: center;
+            color: white;
+        ">
+            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
+            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
+            <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
         </div>
         """, unsafe_allow_html=True)
         
-        time.sleep(2)  # Duração da mensagem de conexão
-        
-        # Fase 3: Fade out suave
-        call_container.markdown("""
-        <style>
-            @keyframes fadeOut {
-                from { opacity: 1; }
-                to { opacity: 0; }
-            }
-        </style>
-        <script>
-            // Aplica animação de fade out
-            document.querySelector('.connected-screen').style.animation = 'fadeOut 0.5s forwards';
-            
-            // Remove o elemento após a animação
-            setTimeout(() => {
-                document.querySelector('.connected-screen').style.display = 'none';
-            }, 500);
-        </script>
-        """, unsafe_allow_html=True)
-        
-        time.sleep(0.5)  # Tempo para a animação completar
-        call_container.empty()  # Remove completamente o container
+        time.sleep(ATENDIDA_DELAY)
+        call_container.empty()
 
     @staticmethod
     def show_status_effect(container, status_type):
@@ -1021,11 +944,9 @@ class UiService:
             
             st.markdown(f"""
             <div style="
-                background: rgba(255, 20, 147, 0.1);
-                padding: 10px;
+                background: rgba(255, 20, 147, 0.1); 
+                padding: 10px; 
                 border-radius: 8px;
-                margin-bottom: 15px;
-                text-align: center;
             ">
                 <p style="margin: 0; font-size: 0.9em;">
                     Status: <span style="color: {status_color}">{status}</span>
