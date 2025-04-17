@@ -10,7 +10,7 @@ import sqlite3
 import re
 import os
 import uuid
-import math
+import math  # Adicionado para o efeito de pulsar
 from datetime import datetime
 from pathlib import Path
 
@@ -18,19 +18,30 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    # Configurações da API (AGORA COM SECRETS)
+    API_KEY = st.secrets["GEMINI_API_KEY"]  # ✅ Chave segura
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    
+    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
+    
+    # URLs de assinatura VIP
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
+    
+    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
+    
+    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
+    
+    # Imagens
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -190,6 +201,7 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
+        # Palavras-chave que indicam interesse em comprar/ver conteúdo
         interest_keywords = [
             "quero ver", "quero comprar", "como assinar", 
             "quanto custa", "valor", "preço", "oferta",
@@ -197,19 +209,26 @@ class ApiService:
             "mostrar mais", "ver mais", "fotos", "vídeos"
         ]
         
+        # Verifica se o usuário pediu para ver algo
         if any(word in prompt.lower() for word in ["ver", "mostra", "foto", "vídeo", "fotinho", "foto sua"]):
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            
+            # Nova resposta com botão em vez de link
             resposta = {
                 "text": "Quer ver tudo amor? 💋",
                 "button": True,
                 "button_text": "Ver Ofertas Exclusivas",
                 "button_target": "offers"
             }
+            
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
         
+        # Verifica interesse geral
         if any(keyword in prompt.lower() for keyword in interest_keywords) and random.random() > 0.3:
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            
+            # Resposta com botão de oferta
             resposta = {
                 "text": random.choice([
                     "Tenho umas ofertas especiais só para você...",
@@ -220,6 +239,7 @@ class ApiService:
                 "button_text": "🔥 Ofertas VIP 🔥",
                 "button_target": "offers"
             }
+            
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
         
@@ -267,7 +287,7 @@ class ApiService:
             }
 
 # ======================
-# PÁGINAS
+# PÁGINAS (ATUALIZADO COM BOTÕES VIP)
 # ======================
 class NewPages:
     @staticmethod
@@ -292,6 +312,9 @@ class NewPages:
                 filter: blur(0) brightness(1);
             }
         </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
         <div class="hero-banner">
             <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
             <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
@@ -324,7 +347,10 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("💎 Tornar-se VIP Agora", key="vip_button_home", use_container_width=True, type="primary"):
+        if st.button("💎 Tornar-se VIP Agora", 
+                    key="vip_button_home", 
+                    use_container_width=True,
+                    type="primary"):
             st.session_state.current_page = "offers"
             st.rerun()
 
@@ -430,112 +456,129 @@ class NewPages:
                 font-weight: bold;
             }
         </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
         <div style="text-align: center; margin-bottom: 30px;">
             <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
             <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
         </div>
-        <div class="package-container">
-            <div class="package-box package-start">
-                <div class="package-header">
-                    <h3 style="color: #ff66b3;">START</h3>
-                    <div class="package-price" style="color: #ff66b3;">R$ 49,90</div>
-                    <small>para iniciantes</small>
-                </div>
-                <ul class="package-benefits">
-                    <li>10 fotos Inéditas</li>
-                    <li>3 vídeo Intimos</li>
-                    <li>Fotos Exclusivas</li>
-                    <li>Videos Intimos </li>
-                    <li>Fotos Buceta</li>
-                </ul>
-                <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                    <a href="{Config.CHECKOUT_START}" target="_blank" rel="noopener noreferrer" style="
-                        display: block;
-                        background: linear-gradient(45deg, #ff66b3, #ff1493);
-                        color: white;
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        text-decoration: none;
-                        font-weight: bold;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.transform='scale(1.05)'" 
-                    onmouseout="this.style.transform='scale(1)'"
-                    onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                        QUERO ESTE PACOTE ➔
-                    </a>
-                </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="package-container">', unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div class="package-box package-start">
+            <div class="package-header">
+                <h3 style="color: #ff66b3;">START</h3>
+                <div class="package-price" style="color: #ff66b3;">R$ 49,90</div>
+                <small>para iniciantes</small>
             </div>
-            <div class="package-box package-premium">
-                <div class="package-badge">POPULAR</div>
-                <div class="package-header">
-                    <h3 style="color: #9400d3;">PREMIUM</h3>
-                    <div class="package-price" style="color: #9400d3;">R$ 99,90</div>
-                    <small>experiência completa</small>
-                </div>
-                <ul class="package-benefits">
-                    <li>20 fotos exclusivas</li>
-                    <li>5 vídeos premium</li>
-                    <li>Fotos Peito</li>
-                    <li>Fotos Bunda</li>
-                    <li>Fotos Buceta</li>
-                    <li>Fotos Exclusivas e Videos Exclusivos</li>
-                    <li>Videos Masturbando</li>
-                </ul>
-                <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                    <a href="{Config.CHECKOUT_PREMIUM}" target="_blank" rel="noopener noreferrer" style="
-                        display: block;
-                        background: linear-gradient(45deg, #9400d3, #ff1493);
-                        color: white;
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        text-decoration: none;
-                        font-weight: bold;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.transform='scale(1.05)'" 
-                    onmouseout="this.style.transform='scale(1)'"
-                    onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                        QUERO ESTE PACOTE ➔
-                    </a>
-                </div>
-            </div>
-            <div class="package-box package-extreme">
-                <div class="package-header">
-                    <h3 style="color: #ff0066;">EXTREME</h3>
-                    <div class="package-price" style="color: #ff0066;">R$ 199,90</div>
-                    <small>para verdadeiros fãs</small>
-                </div>
-                <ul class="package-benefits">
-                    <li>30 fotos ultra-exclusivas</li>
-                    <li>10 Videos Exclusivos</li>
-                    <li>Fotos Peito</li>
-                    <li>Fotos Bunda</li>
-                    <li>Fotos Buceta</li>
-                    <li>Fotos Exclusivas</li>
-                    <li>Videos Masturbando</li>
-                    <li>Videos Transando</li>
-                    <li>Acesso a conteúdos futuros</li>
-                </ul>
-                <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                    <a href="{Config.CHECKOUT_EXTREME}" target="_blank" rel="noopener noreferrer" style="
-                        display: block;
-                        background: linear-gradient(45deg, #ff0066, #9400d3);
-                        color: white;
-                        text-align: center;
-                        padding: 10px;
-                        border-radius: 8px;
-                        text-decoration: none;
-                        font-weight: bold;
-                        transition: all 0.3s;
-                    " onmouseover="this.style.transform='scale(1.05)'" 
-                    onmouseout="this.style.transform='scale(1)'"
-                    onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                        QUERO ESTE PACOTE ➔
-                    </a>
-                </div>
+            <ul class="package-benefits">
+                <li>10 fotos Inéditas</li>
+                <li>3 vídeo Intimos</li>
+                <li>Fotos Exclusivas</li>
+                <li>Videos Intimos </li>
+                <li>Fotos Buceta</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
             </div>
         </div>
+        """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="package-box package-premium">
+            <div class="package-badge">POPULAR</div>
+            <div class="package-header">
+                <h3 style="color: #9400d3;">PREMIUM</h3>
+                <div class="package-price" style="color: #9400d3;">R$ 99,90</div>
+                <small>experiência completa</small>
+            </div>
+            <ul class="package-benefits">
+                <li>20 fotos exclusivas</li>
+                <li>5 vídeos premium</li>
+                <li>Fotos Peito</li>
+                <li>Fotos Bunda</li>
+                <li>Fotos Buceta</li>
+                <li>Fotos Exclusivas e Videos Exclusivos</li>
+                <li>Videos Masturbando</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #9400d3, #ff1493);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
+            </div>
+        </div>
+        """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="package-box package-extreme">
+            <div class="package-header">
+                <h3 style="color: #ff0066;">EXTREME</h3>
+                <div class="package-price" style="color: #ff0066;">R$ 199,90</div>
+                <small>para verdadeiros fãs</small>
+            </div>
+            <ul class="package-benefits">
+                <li>30 fotos ultra-exclusivas</li>
+                <li>10 Videos Exclusivos</li>
+                <li>Fotos Peito</li>
+                <li>Fotos Bunda</li>
+                <li>Fotos Buceta</li>
+                <li>Fotos Exclusivas</li>
+                <li>Videos Masturbando</li>
+                <li>Videos Transando</li>
+                <li>Acesso a conteúdos futuros</li>
+            </ul>
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
+                <a href="{checkout_extreme}" target="_blank" rel="noopener noreferrer" style="
+                    display: block;
+                    background: linear-gradient(45deg, #ff0066, #9400d3);
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
+            </div>
+        </div>
+        """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown("""
         <div class="countdown-container">
             <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
             <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
@@ -632,7 +675,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (ATUALIZADO COM NOVO EFEITO DE LIGAÇÃO)
 # ======================
 class UiService:
     @staticmethod
@@ -648,7 +691,7 @@ class UiService:
         while time.time() - start_time < RINGING_DURATION:
             ring_size = 120 + 10 * math.sin(time.time() * 5)  # Efeito de pulsar
             
-            html_content = f"""
+            call_container.markdown(f"""
             <div style="
                 background: #000;
                 height: 100vh;
@@ -701,13 +744,11 @@ class UiService:
                     100% {{ box-shadow: 0 0 0 0 rgba(255, 102, 179, 0); }}
                 }}
             </style>
-            """
-            
-            call_container.markdown(html_content, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
             time.sleep(0.1)
         
         # ---- FASE 2: ATENDIDA ---- #
-        html_content = f"""
+        call_container.markdown(f"""
         <div style="
             background: #000;
             height: 100vh;
@@ -754,9 +795,7 @@ class UiService:
                 to {{ opacity: 1; }}
             }}
         </style>
-        """
-        
-        call_container.markdown(html_content, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         time.sleep(ANSWERED_DURATION)
         
         call_container.empty()
@@ -875,17 +914,21 @@ class UiService:
                 color: #ff66b3;
             }
         </style>
-        <div class="age-verification">
-            <div class="age-header">
-                <div class="age-icon">🔞</div>
-                <h1 class="age-title">Verificação de Idade</h1>
-            </div>
-            <div class="age-content">
-                <p>Este site contém material explícito destinado exclusivamente a adultos maiores de 18 anos.</p>
-                <p>Ao acessar este conteúdo, você declara estar em conformidade com todas as leis locais aplicáveis.</p>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
+
+        with st.container():
+            st.markdown("""
+            <div class="age-verification">
+                <div class="age-header">
+                    <div class="age-icon">🔞</div>
+                    <h1 class="age-title">Verificação de Idade</h1>
+                </div>
+                <div class="age-content">
+                    <p>Este site contém material explícito destinado exclusivamente a adultos maiores de 18 anos.</p>
+                    <p>Ao acessar este conteúdo, você declara estar em conformidade com todas as leis locais aplicáveis.</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
@@ -934,11 +977,14 @@ class UiService:
                     background: rgba(255, 102, 179, 0.2);
                 }
             </style>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
             <div class="sidebar-header">
-                <img src="{Config.IMG_PROFILE}" alt="Paloma">
+                <img src="{profile_img}" alt="Paloma">
                 <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
-            """, unsafe_allow_html=True)
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### Menu Exclusivo")
@@ -1131,12 +1177,15 @@ class UiService:
                 background: linear-gradient(45deg, #ff66b3, #ff1493) !important;
             }
         </style>
+        """, unsafe_allow_html=True)
+        
+        UiService.chat_shortcuts()
+        
+        st.markdown(f"""
         <div class="chat-header">
             <h2 style="margin:0; font-size:1.5em; display:inline-block;">💬 Chat Privado com Paloma</h2>
         </div>
         """, unsafe_allow_html=True)
-        
-        UiService.chat_shortcuts()
         
         st.sidebar.markdown(f"""
         <div style="
@@ -1412,7 +1461,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (ATUALIZADA COM NOVO EFEITO DE LIGAÇÃO)
 # ======================
 def main():
     st.markdown("""
@@ -1450,7 +1499,7 @@ def main():
             box-shadow: 0 6px 12px rgba(255, 20, 147, 0.4) !important;
         }
         .stApp {
-            overflow: hidden !important;
+            overflow: hidden !important;  /* Evita scroll durante o efeito de ligação */
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1471,7 +1520,7 @@ def main():
     UiService.setup_sidebar()
     
     if not st.session_state.connection_complete:
-        UiService.show_pro_call_effect()
+        UiService.show_pro_call_effect()  # ✅ NOVO EFEITO DE LIGAÇÃO (2 estágios)
         st.session_state.connection_complete = True
         save_persistent_data()
         st.rerun()
@@ -1479,13 +1528,13 @@ def main():
     if not st.session_state.chat_started:
         col1, col2, col3 = st.columns([1,3,1])
         with col2:
-            st.markdown(f"""
+            st.markdown("""
             <div style="text-align: center; margin: 50px 0;">
-                <img src="{Config.IMG_PROFILE}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
+                <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
                 <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
                 <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
-            """, unsafe_allow_html=True)
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
                 st.session_state.update({
