@@ -694,59 +694,106 @@ class UiService:
 
     @staticmethod
     def show_call_effect():
-        LIGANDO_DELAY = 5
-        ATENDIDA_DELAY = 3
-
         call_container = st.empty()
-        call_container.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1e0033, #3c0066);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 300px;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid #ff66b3;
-            text-align: center;
-            color: white;
-            animation: pulse-ring 2s infinite;
-        ">
-            <div style="font-size: 3rem;">📱</div>
+        
+        # Efeito de ligação (chamando)
+        call_container.markdown("""
+        <style>
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 0.8; }
+                50% { transform: scale(1.05); opacity: 1; }
+                100% { transform: scale(1); opacity: 0.8; }
+            }
+            @keyframes shake {
+                0% { transform: rotate(-5deg); }
+                100% { transform: rotate(5deg); }
+            }
+            .call-container {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 300px;
+                margin: 0 auto;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                border: 2px solid #ff66b3;
+                text-align: center;
+                color: white;
+                animation: pulse 1.5s infinite;
+            }
+            .call-icon {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                display: inline-block;
+                animation: shake 0.5s infinite alternate;
+            }
+            .call-status {
+                margin-top: 10px;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            .online-dot {
+                width: 10px;
+                height: 10px;
+                background: #4CAF50;
+                border-radius: 50%;
+            }
+        </style>
+        
+        <div class="call-container" id="callAnimation">
+            <div class="call-icon">📱</div>
             <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
-                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
-                <span style="font-size: 0.9rem;">Online agora</span>
+            <div class="call-status">
+                <div class="online-dot"></div>
+                <span>Online agora</span>
             </div>
         </div>
-        <style>
-            @keyframes pulse-ring {{
-                0% {{ transform: scale(0.95); opacity: 0.8; }}
-                50% {{ transform: scale(1.05); opacity: 1; }}
-                100% {{ transform: scale(0.95); opacity: 0.8; }}
-            }}
-        </style>
         """, unsafe_allow_html=True)
         
-        time.sleep(LIGANDO_DELAY)
-        call_container.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #1e0033, #3c0066);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 300px;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid #4CAF50;
-            text-align: center;
-            color: white;
-        ">
-            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
-            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
-            <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
+        time.sleep(3)  # Tempo da animação de "ligando"
+        
+        # Transição para "chamada atendida"
+        call_container.markdown("""
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .call-accepted {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                border: 2px solid #4CAF50;
+                animation: fadeIn 0.5s forwards;
+            }
+            .check-icon {
+                font-size: 3.5rem;
+                color: #4CAF50;
+                margin-bottom: 15px;
+                animation: none;
+            }
+        </style>
+        
+        <div class="call-container call-accepted">
+            <div class="check-icon">✓</div>
+            <h3 style="color: #4CAF50; margin-bottom: 5px;">Conectado!</h3>
+            <p style="font-size: 0.9rem; margin:0; opacity: 0.8;">Pronto para conversar...</p>
         </div>
         """, unsafe_allow_html=True)
         
-        time.sleep(ATENDIDA_DELAY)
+        time.sleep(2)  # Tempo mostrando "atendida"
+        
+        # Fade out suave
+        call_container.markdown("""
+        <script>
+            document.getElementById('callAnimation').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('callAnimation').style.display = 'none';
+            }, 500);
+        </script>
+        """, unsafe_allow_html=True)
+        
+        time.sleep(0.5)
         call_container.empty()
 
     @staticmethod
@@ -944,9 +991,11 @@ class UiService:
             
             st.markdown(f"""
             <div style="
-                background: rgba(255, 20, 147, 0.1); 
-                padding: 10px; 
+                background: rgba(255, 20, 147, 0.1);
+                padding: 10px;
                 border-radius: 8px;
+                margin-bottom: 15px;
+                text-align: center;
             ">
                 <p style="margin: 0; font-size: 0.9em;">
                     Status: <span style="color: {status_color}">{status}</span>
