@@ -17,6 +17,9 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
+    # NOVA LOGO (ADICIONADO)
+    LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
+    
     # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
@@ -877,48 +880,25 @@ class UiService:
     @staticmethod
     def setup_sidebar():
         with st.sidebar:
-            st.markdown("""
+            # ============= NOVA LOGO (INÍCIO) =============
+            st.markdown(f"""
+            <div style="
+                padding: 15px 0px 10px 15px;
+                margin-bottom: 10px;
+            ">
+                <img src="{Config.LOGO_URL}" style="height: 38px; width: auto; opacity: 0.95;">
+            </div>
             <style>
-                [data-testid="stSidebar"] {
-                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
-                    border-right: 1px solid #ff66b3 !important;
-                }
-                .sidebar-header {
-                    text-align: center; 
-                    margin-bottom: 20px;
-                }
-                .sidebar-header img {
-                    border-radius: 50%; 
-                    border: 2px solid #ff66b3;
-                    width: 80px;
-                    height: 80px;
-                    object-fit: cover;
-                }
-                .vip-badge {
-                    background: linear-gradient(45deg, #ff1493, #9400d3);
-                    padding: 15px;
-                    border-radius: 8px;
-                    color: white;
-                    text-align: center;
-                    margin: 10px 0;
-                }
-                .menu-item {
+                [data-testid="stSidebar"] img {{
                     transition: all 0.3s;
-                    padding: 10px;
-                    border-radius: 5px;
-                }
-                .menu-item:hover {
-                    background: rgba(255, 102, 179, 0.2);
-                }
+                }}
+                [data-testid="stSidebar"] img:hover {{
+                    opacity: 1;
+                    transform: scale(1.02);
+                }}
             </style>
             """, unsafe_allow_html=True)
-            
-            st.markdown("""
-            <div class="sidebar-header">
-                <img src="{profile_img}" alt="Paloma">
-                <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
-            </div>
-            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
+            # ============= NOVA LOGO (FIM) =============
             
             st.markdown("---")
             st.markdown("### Menu Exclusivo")
