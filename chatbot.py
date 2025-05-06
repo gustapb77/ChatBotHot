@@ -17,9 +17,6 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    # NOVA CONFIG DA LOGO (TAMANHO MAIOR)
-    LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
-    
     # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
@@ -55,6 +52,7 @@ class Config:
         "https://i.ibb.co/MxqKBk1X/Save-ClipApp-481825770-18486618637042608-2702272791254832108-n.jpg",
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
+    LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
 # PERSISTÊNCIA DE ESTADO
@@ -880,25 +878,84 @@ class UiService:
     @staticmethod
     def setup_sidebar():
         with st.sidebar:
-            # ============= LOGO ATUALIZADA (MAIOR E MAIS ALTA) =============
-            st.markdown(f"""
-            <div style="
-                padding: 0px;
-                margin: -5px 0 10px -5px;
-                text-align: center;
-            ">
-                <img src="{Config.LOGO_URL}" style="height: 80px; width: auto; opacity: 0.95;">
-            </div>
+            st.markdown("""
             <style>
-                [data-testid="stSidebar"] img {{
+                [data-testid="stSidebar"] {
+                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+                    border-right: 1px solid #ff66b3 !important;
+                }
+                .sidebar-logo-container {
+                    margin: -25px -25px 0px -25px;
+                    padding: 0;
+                    text-align: left;
+                }
+                .sidebar-logo {
+                    max-width: 100%;
+                    height: auto;
+                    margin-bottom: -10px;
+                }
+                .sidebar-header {
+                    text-align: center; 
+                    margin-bottom: 20px;
+                }
+                .sidebar-header img {
+                    border-radius: 50%; 
+                    border: 2px solid #ff66b3;
+                    width: 80px;
+                    height: 80px;
+                    object-fit: cover;
+                }
+                .vip-badge {
+                    background: linear-gradient(45deg, #ff1493, #9400d3);
+                    padding: 15px;
+                    border-radius: 8px;
+                    color: white;
+                    text-align: center;
+                    margin: 10px 0;
+                }
+                .menu-item {
                     transition: all 0.3s;
-                }}
-                [data-testid="stSidebar"] img:hover {{
-                    opacity: 1;
-                    transform: scale(1.03);
-                }}
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                .menu-item:hover {
+                    background: rgba(255, 102, 179, 0.2);
+                }
+                .sidebar-logo {
+                    width: 280px;
+                    height: auto;
+                    object-fit: contain;
+                    margin-left: -15px;
+                    margin-top: -15px;
+                }
+                @media (min-width: 768px) {
+                    .sidebar-logo {
+                        width: 320px;
+                    }
+                }
+                [data-testid="stSidebarNav"] {
+                    margin-top: -50px;
+                }
+                .sidebar-logo-container {
+                    position: relative;
+                    z-index: 1;
+                }
             </style>
             """, unsafe_allow_html=True)
+            
+            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
+            st.markdown(f"""
+            <div class="sidebar-logo-container">
+                <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="sidebar-header">
+                <img src="{profile_img}" alt="Paloma">
+                <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
+            </div>
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### Menu Exclusivo")
