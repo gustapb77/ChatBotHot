@@ -878,97 +878,68 @@ class UiService:
     @staticmethod
     def setup_sidebar():
         with st.sidebar:
+            # CSS customizado para remover TODOS os espaçamentos
             st.markdown("""
             <style>
-                [data-testid="stSidebar"] {
-                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
-                    border-right: 1px solid #ff66b3 !important;
-                }
-                /* Reset completo do padding/margin */
+                /* Remove todo o padding/margin padrão */
                 [data-testid="stSidebar"] > div:first-child {
-                    padding: 0 !important;
-                    margin: 0 !important;
+                    padding-top: 0rem !important;
+                    padding-left: 0rem !important;
+                    padding-right: 0rem !important;
+                    padding-bottom: 0rem !important;
+                    margin-top: -2rem !important;
+                    margin-bottom: -2rem !important;
                 }
                 
-                /* Ajustes específicos para cada seção */
+                /* Ajuste para a logo no topo */
                 .sidebar-logo-container {
-                    margin: -25px -25px -20px -25px !important;
+                    margin: -2rem -1.5rem -1rem -1.5rem !important;
                 }
                 
-                .sidebar-header {
-                    margin: -15px 0 0 0 !important;
-                    padding: 0 !important;
-                    text-align: center;
-                }
-                
-                .sidebar-menu-section {
-                    margin: -8px 0 !important;
-                    padding: 0 !important;
+                /* Ajuste para a foto de perfil */
+                .sidebar-profile {
+                    margin-top: -1rem !important;
+                    margin-bottom: -0.5rem !important;
                 }
                 
                 /* Ajuste para os botões do menu */
                 [data-testid="stSidebar"] .stButton button {
-                    margin: 2px 0 !important;
-                    border-radius: 8px !important;
-                    transition: all 0.3s !important;
+                    margin: 0.1rem 0 !important;
+                    border-radius: 0.5rem !important;
                 }
                 
-                /* Remove espaçamento dos separadores */
-                [data-testid="stSidebar"] hr {
-                    margin: 8px 0 !important;
-                }
-                
-                .sidebar-logo {
-                    max-width: 100%;
-                    height: auto;
-                    margin-bottom: -10px;
-                }
-                
-                .vip-badge {
-                    background: linear-gradient(45deg, #ff1493, #9400d3);
-                    padding: 15px;
-                    border-radius: 8px;
-                    color: white;
-                    text-align: center;
-                    margin: 10px 0;
-                }
-                
-                .sidebar-footer {
-                    font-size: 0.7em;
-                    color: #888;
-                    text-align: center;
-                    margin-top: 10px;
+                /* Espaçamento entre seções */
+                .sidebar-section {
+                    margin: 0.5rem 0 !important;
+                    padding: 0 0.5rem !important;
                 }
             </style>
             """, unsafe_allow_html=True)
-            
-            # Logo colada no topo
+
+            # Logo - colada no topo sem espaços
             st.markdown(f"""
             <div class="sidebar-logo-container">
-                <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
+                <img src="{Config.LOGO_URL}" style="width:100%; height:auto; margin-bottom:-0.5rem;">
             </div>
             """, unsafe_allow_html=True)
-            
-            # Header ajustado
-            st.markdown("""
-            <div class="sidebar-header">
-                <img src="{profile_img}" alt="Paloma" style="
-                    border-radius: 50%; 
-                    border: 2px solid #ff66b3;
-                    width: 80px;
-                    height: 80px;
-                    object-fit: cover;
-                    margin-top: 5px;
+
+            # Foto de perfil - ajustada
+            st.markdown(f"""
+            <div class="sidebar-profile" style="text-align:center;">
+                <img src="{Config.IMG_PROFILE}" style="
+                    width:5rem;
+                    height:5rem;
+                    object-fit:cover;
+                    border-radius:50%;
+                    border:2px solid #ff66b3;
                 ">
-                <h3 style="color: #ff66b3; margin: 5px 0 10px 0;">Paloma Premium</h3>
+                <h3 style="color:#ff66b3; margin:0.5rem 0;">Paloma Premium</h3>
             </div>
-            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
-            
-            # Menu principal
-            st.markdown("""
-            <div class="sidebar-menu-section">
-                <h4 style="color: #ff66b3; margin-bottom: 8px;">Menu Exclusivo</h4>
             """, unsafe_allow_html=True)
+
+            # Menu Principal
+            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+            st.markdown("#### Menu Exclusivo")
             
             menu_options = {
                 "💋 Início": "home",
@@ -983,41 +954,51 @@ class UiService:
                     save_persistent_data()
                     st.rerun()
             
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
-            st.markdown("""
-            <div class="sidebar-menu-section">
-                <h4 style="color: #ff66b3; margin: 15px 0 8px 0;">🔒 Sua Conta</h4>
-            """, unsafe_allow_html=True)
+
+            # Seção de Conta
+            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+            st.markdown("#### 🔒 Sua Conta")
             
             status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
             status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
             
             st.markdown(f"""
             <div style="
-                background: rgba(255, 20, 147, 0.1); 
-                padding: 10px; 
-                border-radius: 8px;
+                background: rgba(255, 20, 147, 0.1);
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                margin: 0.5rem 0;
             ">
-                <p style="margin: 0; font-size: 0.9em;">
-                    Status: <span style="color: {status_color}">{status}</span>
+                <p style="margin:0; font-size:0.9em;">
+                    Status: <span style="color:{status_color}; font-weight:bold;">{status}</span>
                 </p>
-                <p style="margin: 5px 0 0; font-size: 0.8em;">
+                <p style="margin:0.25rem 0 0; font-size:0.8em;">
                     Expira em: {random.randint(1,30)} dias
                 </p>
             </div>
             """, unsafe_allow_html=True)
             
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
-            st.markdown("""
-            <div class="sidebar-menu-section">
-                <h4 style="color: #ff66b3; margin: 15px 0 8px 0;">💎 Upgrade VIP</h4>
-            """, unsafe_allow_html=True)
+
+            # Seção VIP
+            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+            st.markdown("#### 💎 Upgrade VIP")
             
             st.markdown("""
-            <div class="vip-badge">
-                <p style="margin: 0 0 10px; font-weight: bold;">Acesso completo por apenas</p>
-                <p style="margin: 0; font-size: 1.5em; font-weight: bold;">R$ 29,90/mês</p>
-                <p style="margin: 10px 0 0; font-size: 0.8em;">Cancele quando quiser</p>
+            <div style="
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                text-align: center;
+                margin: 0.5rem 0;
+            ">
+                <p style="margin:0 0 0.5rem; font-weight:bold;">Acesso completo por apenas</p>
+                <p style="margin:0; font-size:1.5rem; font-weight:bold;">R$ 29,90/mês</p>
+                <p style="margin:0.5rem 0 0; font-size:0.8rem;">Cancele quando quiser</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1026,9 +1007,18 @@ class UiService:
                 save_persistent_data()
                 st.rerun()
             
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
+
+            # Rodapé
             st.markdown("""
-            <div class="sidebar-footer">
+            <div style="
+                font-size:0.7rem;
+                color:#888;
+                text-align:center;
+                margin-top:0.5rem;
+                padding:0 0.5rem;
+            ">
                 <p>© 2024 Paloma Premium</p>
                 <p>🔞 Conteúdo para maiores de 18 anos</p>
             </div>
