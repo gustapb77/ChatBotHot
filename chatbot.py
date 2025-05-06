@@ -17,7 +17,7 @@ from pathlib import Path
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    # NOVA LOGO (ADICIONADO)
+    # NOVA CONFIG DA LOGO (TAMANHO MAIOR)
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
     
     # Configurações da API
@@ -880,13 +880,14 @@ class UiService:
     @staticmethod
     def setup_sidebar():
         with st.sidebar:
-            # ============= NOVA LOGO (INÍCIO) =============
+            # ============= LOGO ATUALIZADA (MAIOR E MAIS ALTA) =============
             st.markdown(f"""
             <div style="
-                padding: 15px 0px 10px 15px;
-                margin-bottom: 10px;
+                padding: 0px;
+                margin: -5px 0 10px -5px;
+                text-align: center;
             ">
-                <img src="{Config.LOGO_URL}" style="height: 38px; width: auto; opacity: 0.95;">
+                <img src="{Config.LOGO_URL}" style="height: 80px; width: auto; opacity: 0.95;">
             </div>
             <style>
                 [data-testid="stSidebar"] img {{
@@ -894,11 +895,10 @@ class UiService:
                 }}
                 [data-testid="stSidebar"] img:hover {{
                     opacity: 1;
-                    transform: scale(1.02);
+                    transform: scale(1.03);
                 }}
             </style>
             """, unsafe_allow_html=True)
-            # ============= NOVA LOGO (FIM) =============
             
             st.markdown("---")
             st.markdown("### Menu Exclusivo")
