@@ -878,68 +878,87 @@ class UiService:
     @staticmethod
     def setup_sidebar():
         with st.sidebar:
-            # CSS customizado para remover TODOS os espaçamentos
             st.markdown("""
             <style>
-                /* Remove todo o padding/margin padrão */
-                [data-testid="stSidebar"] > div:first-child {
-                    padding-top: 0rem !important;
-                    padding-left: 0rem !important;
-                    padding-right: 0rem !important;
-                    padding-bottom: 0rem !important;
-                    margin-top: -2rem !important;
-                    margin-bottom: -2rem !important;
+                [data-testid="stSidebar"] {
+                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+                    border-right: 1px solid #ff66b3 !important;
                 }
-                
-                /* Ajuste para a logo no topo */
                 .sidebar-logo-container {
-                    margin: -2rem -1.5rem -1rem -1.5rem !important;
+                    margin: -25px -25px 0px -25px;
+                    padding: 0;
+                    text-align: left;
                 }
-                
-                /* Ajuste para a foto de perfil */
-                .sidebar-profile {
-                    margin-top: -1rem !important;
-                    margin-bottom: -0.5rem !important;
+                .sidebar-logo {
+                    max-width: 100%;
+                    height: auto;
+                    margin-bottom: -10px;
                 }
-                
-                /* Ajuste para os botões do menu */
-                [data-testid="stSidebar"] .stButton button {
-                    margin: 0.1rem 0 !important;
-                    border-radius: 0.5rem !important;
+                .sidebar-header {
+                    text-align: center; 
+                    margin-bottom: 20px;
                 }
-                
-                /* Espaçamento entre seções */
-                .sidebar-section {
-                    margin: 0.5rem 0 !important;
-                    padding: 0 0.5rem !important;
+                .sidebar-header img {
+                    border-radius: 50%; 
+                    border: 2px solid #ff66b3;
+                    width: 80px;
+                    height: 80px;
+                    object-fit: cover;
+                }
+                .vip-badge {
+                    background: linear-gradient(45deg, #ff1493, #9400d3);
+                    padding: 15px;
+                    border-radius: 8px;
+                    color: white;
+                    text-align: center;
+                    margin: 10px 0;
+                }
+                .menu-item {
+                    transition: all 0.3s;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                .menu-item:hover {
+                    background: rgba(255, 102, 179, 0.2);
+                }
+                .sidebar-logo {
+                    width: 280px;
+                    height: auto;
+                    object-fit: contain;
+                    margin-left: -15px;
+                    margin-top: -15px;
+                }
+                @media (min-width: 768px) {
+                    .sidebar-logo {
+                        width: 320px;
+                    }
+                }
+                [data-testid="stSidebarNav"] {
+                    margin-top: -50px;
+                }
+                .sidebar-logo-container {
+                    position: relative;
+                    z-index: 1;
                 }
             </style>
             """, unsafe_allow_html=True)
-
-            # Logo - colada no topo sem espaços
+            
+            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
             st.markdown(f"""
             <div class="sidebar-logo-container">
-                <img src="{Config.LOGO_URL}" style="width:100%; height:auto; margin-bottom:-0.5rem;">
+                <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
             </div>
             """, unsafe_allow_html=True)
-
-            # Foto de perfil - ajustada
-            st.markdown(f"""
-            <div class="sidebar-profile" style="text-align:center;">
-                <img src="{Config.IMG_PROFILE}" style="
-                    width:5rem;
-                    height:5rem;
-                    object-fit:cover;
-                    border-radius:50%;
-                    border:2px solid #ff66b3;
-                ">
-                <h3 style="color:#ff66b3; margin:0.5rem 0;">Paloma Premium</h3>
+            
+            st.markdown("""
+            <div class="sidebar-header">
+                <img src="{profile_img}" alt="Paloma">
+                <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
-            """, unsafe_allow_html=True)
-
-            # Menu Principal
-            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-            st.markdown("#### Menu Exclusivo")
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("### Menu Exclusivo")
             
             menu_options = {
                 "💋 Início": "home",
@@ -954,51 +973,34 @@ class UiService:
                     save_persistent_data()
                     st.rerun()
             
-            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
-
-            # Seção de Conta
-            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-            st.markdown("#### 🔒 Sua Conta")
+            st.markdown("### 🔒 Sua Conta")
             
             status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
             status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
             
             st.markdown(f"""
             <div style="
-                background: rgba(255, 20, 147, 0.1);
-                padding: 0.75rem;
-                border-radius: 0.5rem;
-                margin: 0.5rem 0;
+                background: rgba(255, 20, 147, 0.1); 
+                padding: 10px; 
+                border-radius: 8px;
             ">
-                <p style="margin:0; font-size:0.9em;">
-                    Status: <span style="color:{status_color}; font-weight:bold;">{status}</span>
+                <p style="margin: 0; font-size: 0.9em;">
+                    Status: <span style="color: {status_color}">{status}</span>
                 </p>
-                <p style="margin:0.25rem 0 0; font-size:0.8em;">
+                <p style="margin: 5px 0 0; font-size: 0.8em;">
                     Expira em: {random.randint(1,30)} dias
                 </p>
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
-
-            # Seção VIP
-            st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-            st.markdown("#### 💎 Upgrade VIP")
-            
+            st.markdown("### 💎 Upgrade VIP")
             st.markdown("""
-            <div style="
-                background: linear-gradient(45deg, #ff1493, #9400d3);
-                color: white;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                text-align: center;
-                margin: 0.5rem 0;
-            ">
-                <p style="margin:0 0 0.5rem; font-weight:bold;">Acesso completo por apenas</p>
-                <p style="margin:0; font-size:1.5rem; font-weight:bold;">R$ 29,90/mês</p>
-                <p style="margin:0.5rem 0 0; font-size:0.8rem;">Cancele quando quiser</p>
+            <div class="vip-badge">
+                <p style="margin: 0 0 10px; font-weight: bold;">Acesso completo por apenas</p>
+                <p style="margin: 0; font-size: 1.5em; font-weight: bold;">R$ 29,90/mês</p>
+                <p style="margin: 10px 0 0; font-size: 0.8em;">Cancele quando quiser</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1007,18 +1009,9 @@ class UiService:
                 save_persistent_data()
                 st.rerun()
             
-            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("---")
-
-            # Rodapé
             st.markdown("""
-            <div style="
-                font-size:0.7rem;
-                color:#888;
-                text-align:center;
-                margin-top:0.5rem;
-                padding:0 0.5rem;
-            ">
+            <div style="text-align: center; font-size: 0.7em; color: #888;">
                 <p>© 2024 Paloma Premium</p>
                 <p>🔞 Conteúdo para maiores de 18 anos</p>
             </div>
