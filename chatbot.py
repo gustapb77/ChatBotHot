@@ -883,16 +883,22 @@ class UiService:
                 [data-testid="stSidebar"] {
                     background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
                     border-right: 1px solid #ff66b3 !important;
+                    padding-top: 0 !important;
+                }
+                [data-testid="stSidebar"] > div:first-child {
+                    padding-top: 5px !important;
                 }
                 .sidebar-logo-container {
-                    margin: -25px -25px 0px -25px;
+                    margin: -35px -25px -20px -25px;
                     padding: 0;
                     text-align: left;
                 }
                 .sidebar-logo {
-                    max-width: 100%;
+                    width: 320px;
                     height: auto;
-                    margin-bottom: -10px;
+                    object-fit: contain;
+                    margin-left: -15px;
+                    margin-top: -10px;
                 }
                 .sidebar-header {
                     text-align: center; 
@@ -921,29 +927,18 @@ class UiService:
                 .menu-item:hover {
                     background: rgba(255, 102, 179, 0.2);
                 }
-                .sidebar-logo {
-                    width: 280px;
-                    height: auto;
-                    object-fit: contain;
-                    margin-left: -15px;
-                    margin-top: -15px;
-                }
-                @media (min-width: 768px) {
-                    .sidebar-logo {
-                        width: 320px;
-                    }
-                }
                 [data-testid="stSidebarNav"] {
-                    margin-top: -50px;
+                    margin-top: -25px !important;
                 }
-                .sidebar-logo-container {
-                    position: relative;
-                    z-index: 1;
+                @media (max-width: 768px) {
+                    .sidebar-logo {
+                        width: 280px;
+                    }
                 }
             </style>
             """, unsafe_allow_html=True)
             
-            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
+            # Logo no topo (agora colada praticamente no topo)
             st.markdown(f"""
             <div class="sidebar-logo-container">
                 <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
