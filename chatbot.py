@@ -52,7 +52,7 @@ class Config:
         "https://i.ibb.co/MxqKBk1X/Save-ClipApp-481825770-18486618637042608-2702272791254832108-n.jpg",
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
-    LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
+    LOGO_URL = "https://i.ibb.co/PZcQSMLF/Logo-Golden-Pepper-Letreiro-2.png"
 
 # ======================
 # PERSISTÊNCIA DE ESTADO
