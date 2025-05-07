@@ -311,7 +311,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (CORRIGIDO)
 # ======================
 class ApiService:
     @staticmethod
@@ -353,7 +353,7 @@ class ApiService:
                 "button": True,
                 "button_text": "🔥 Ofertas VIP 🔥",
                 "button_target": "offers"
-            ]
+            }
             
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
@@ -705,7 +705,7 @@ class NewPages:
             if (hours < 0) { hours = 23; }
             
             countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padstart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             setTimeout(updateCountdown, 1000);
         }
