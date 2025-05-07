@@ -55,121 +55,6 @@ class Config:
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
-# ESTILOS GLOBAIS
-# ======================
-def apply_global_styles():
-    st.markdown("""
-    <style>
-        :root {
-            --cta-color: #00bf63;
-            --menu-gradient-start: #101728;
-            --menu-gradient-end: #000000;
-            --text-dark: #101728;
-            --text-light: #ffffff;
-            --card-bg: #ffffff;
-            --border-color: #e0e0e0;
-        }
-        
-        /* Estilos gerais */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-dark) !important;
-            font-weight: 600;
-        }
-        
-        p {
-            color: var(--text-dark) !important;
-        }
-        
-        /* Botões CTA (Verde) */
-        div.stButton > button:first-child {
-            background: var(--cta-color) !important;
-            color: var(--text-light) !important;
-            border: none !important;
-            border-radius: 8px !important;
-            padding: 12px 24px !important;
-            font-weight: 600 !important;
-            transition: all 0.3s !important;
-            box-shadow: 0 4px 12px rgba(0, 191, 99, 0.3) !important;
-        }
-        
-        div.stButton > button:first-child:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 16px rgba(0, 191, 99, 0.4) !important;
-            background: #00a758 !important;
-        }
-        
-        /* Botões do Menu (Gradiente Preto/Azul) */
-        [data-testid="stSidebar"] .stButton button {
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end)) !important;
-            color: var(--text-light) !important;
-            border: none !important;
-            margin: 5px 0 !important;
-            transition: all 0.3s !important;
-            border-radius: 8px !important;
-        }
-        
-        [data-testid="stSidebar"] .stButton button:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 8px rgba(16, 23, 40, 0.3) !important;
-            opacity: 0.9;
-        }
-        
-        /* Sidebar */
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, var(--menu-gradient-start), var(--menu-gradient-end)) !important;
-            border-right: none !important;
-        }
-        
-        /* Cards */
-        .stCard, .package-box, .offer-card {
-            background: var(--card-bg) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-            border: 1px solid var(--border-color) !important;
-        }
-        
-        /* Chat */
-        [data-testid="stChatMessage"] .assistant-message {
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end)) !important;
-            color: var(--text-light) !important;
-            border-radius: 18px 18px 18px 0 !important;
-        }
-        
-        [data-testid="stChatMessage"] .user-message {
-            background: #f5f7fa !important;
-            color: var(--text-dark) !important;
-            border-radius: 18px 18px 0 18px !important;
-        }
-        
-        /* Input */
-        [data-testid="stChatInput"] {
-            background: #f8f9fa !important;
-            border: 1px solid var(--border-color) !important;
-        }
-        
-        /* Barra de progresso */
-        progress {
-            height: 6px;
-            border-radius: 3px;
-        }
-        
-        progress::-webkit-progress-bar {
-            background-color: #f0f2f6;
-            border-radius: 3px;
-        }
-        
-        progress::-webkit-progress-value {
-            background-color: var(--cta-color);
-            border-radius: 3px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-# ======================
 # PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
@@ -311,7 +196,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (CORRIGIDO)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -402,38 +287,47 @@ class ApiService:
             }
 
 # ======================
-# PÁGINAS (ATUALIZADO COM NOVAS CORES)
+# PÁGINAS (ATUALIZADO COM BOTÕES VIP)
 # ======================
 class NewPages:
     @staticmethod
     def show_home_page():
-        apply_global_styles()
-        
         st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
-            padding: 50px 20px;
-            text-align: center;
-            border-radius: 15px;
-            color: white;
-            margin-bottom: 30px;
-        ">
-            <h1 style="color: white; margin-bottom: 15px;">💋 Paloma Premium</h1>
-            <p style="color: rgba(255,255,255,0.9); font-size: 1.1em;">Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
-            <div style="margin-top: 25px;">
+        <style>
+            .hero-banner {
+                background: linear-gradient(135deg, #1e0033, #3c0066);
+                padding: 80px 20px;
+                text-align: center;
+                border-radius: 15px;
+                color: white;
+                margin-bottom: 30px;
+                border: 2px solid #ff66b3;
+            }
+            .preview-img {
+                border-radius: 10px;
+                filter: blur(3px) brightness(0.7);
+                transition: all 0.3s;
+            }
+            .preview-img:hover {
+                filter: blur(0) brightness(1);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="hero-banner">
+            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
+            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
+            <div style="margin-top: 20px;">
                 <a href="#vip" style="
-                    background: var(--cta-color);
+                    background: #ff66b3;
                     color: white;
-                    padding: 12px 30px;
+                    padding: 10px 25px;
                     border-radius: 30px;
                     text-decoration: none;
                     font-weight: bold;
                     display: inline-block;
-                    transition: all 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" 
-                onmouseout="this.style.transform='scale(1)'">
-                    Quero Acessar Tudo ➔
-                </a>
+                ">Quero Acessar Tudo</a>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -443,8 +337,8 @@ class NewPages:
         
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
             with col:
-                st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado")
-                st.markdown("""<div style="text-align:center; color: var(--cta-color); margin-top: -15px; font-weight: 500;">VIP Only</div>""", unsafe_allow_html=True)
+                st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
         st.markdown("---")
         st.markdown("""
@@ -466,8 +360,6 @@ class NewPages:
 
     @staticmethod
     def show_offers_page():
-        apply_global_styles()
-        
         st.markdown("""
         <style>
             .package-container {
@@ -478,10 +370,10 @@ class NewPages:
             }
             .package-box {
                 flex: 1;
-                background: var(--card-bg) !important;
+                background: rgba(30, 0, 51, 0.3);
                 border-radius: 15px;
-                padding: 25px;
-                border: 1px solid var(--border-color) !important;
+                padding: 20px;
+                border: 1px solid;
                 transition: all 0.3s;
                 min-height: 400px;
                 position: relative;
@@ -489,19 +381,27 @@ class NewPages:
             }
             .package-box:hover {
                 transform: translateY(-5px);
-                box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+                box-shadow: 0 10px 20px rgba(255, 102, 179, 0.3);
+            }
+            .package-start {
+                border-color: #ff66b3;
+            }
+            .package-premium {
+                border-color: #9400d3;
+            }
+            .package-extreme {
+                border-color: #ff0066;
             }
             .package-header {
                 text-align: center;
                 padding-bottom: 15px;
                 margin-bottom: 15px;
-                border-bottom: 1px solid rgba(0,0,0,0.1);
+                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
             }
             .package-price {
                 font-size: 1.8em;
                 font-weight: bold;
                 margin: 10px 0;
-                color: var(--cta-color) !important;
             }
             .package-benefits {
                 list-style-type: none;
@@ -511,11 +411,10 @@ class NewPages:
                 padding: 8px 0;
                 position: relative;
                 padding-left: 25px;
-                color: var(--text-dark);
             }
             .package-benefits li:before {
                 content: "✓";
-                color: var(--cta-color);
+                color: #ff66b3;
                 position: absolute;
                 left: 0;
                 font-weight: bold;
@@ -524,7 +423,7 @@ class NewPages:
                 position: absolute;
                 top: 15px;
                 right: -30px;
-                background: var(--cta-color);
+                background: #ff0066;
                 color: white;
                 padding: 5px 30px;
                 transform: rotate(45deg);
@@ -534,62 +433,61 @@ class NewPages:
                 text-align: center;
             }
             .countdown-container {
-                background: linear-gradient(45deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
                 color: white;
-                padding: 20px;
+                padding: 15px;
                 border-radius: 10px;
                 margin: 40px 0;
+                box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
                 text-align: center;
             }
             .offer-card {
-                border: 1px solid var(--border-color);
+                border: 1px solid #ff66b3;
                 border-radius: 15px;
                 padding: 20px;
                 margin-bottom: 20px;
-                background: var(--card-bg);
+                background: rgba(30, 0, 51, 0.3);
             }
             .offer-highlight {
-                background: var(--cta-color);
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
                 color: white;
                 padding: 5px 10px;
                 border-radius: 5px;
                 font-weight: bold;
-                display: inline-block;
-                margin-bottom: 10px;
             }
         </style>
         """, unsafe_allow_html=True)
 
         st.markdown("""
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: var(--text-dark); border-bottom: 2px solid var(--cta-color); display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
-            <p style="color: #666; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
+            <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
+            <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown('<div class="package-container">', unsafe_allow_html=True)
         
         st.markdown("""
-        <div class="package-box">
+        <div class="package-box package-start">
             <div class="package-header">
-                <h3 style="color: var(--text-dark);">START</h3>
-                <div class="package-price">R$ 49,90</div>
-                <small style="color: #666;">para iniciantes</small>
+                <h3 style="color: #ff66b3;">START</h3>
+                <div class="package-price" style="color: #ff66b3;">R$ 49,90</div>
+                <small>para iniciantes</small>
             </div>
             <ul class="package-benefits">
                 <li>10 fotos Inéditas</li>
                 <li>3 vídeo Intimos</li>
                 <li>Fotos Exclusivas</li>
-                <li>Videos Intimos</li>
+                <li>Videos Intimos </li>
                 <li>Fotos Buceta</li>
             </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 50px);">
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
                 <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
-                    background: var(--cta-color);
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
                     color: white;
                     text-align: center;
-                    padding: 12px;
+                    padding: 10px;
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
@@ -604,12 +502,12 @@ class NewPages:
         """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
 
         st.markdown("""
-        <div class="package-box">
+        <div class="package-box package-premium">
             <div class="package-badge">POPULAR</div>
             <div class="package-header">
-                <h3 style="color: var(--text-dark);">PREMIUM</h3>
-                <div class="package-price">R$ 99,90</div>
-                <small style="color: #666;">experiência completa</small>
+                <h3 style="color: #9400d3;">PREMIUM</h3>
+                <div class="package-price" style="color: #9400d3;">R$ 99,90</div>
+                <small>experiência completa</small>
             </div>
             <ul class="package-benefits">
                 <li>20 fotos exclusivas</li>
@@ -620,13 +518,13 @@ class NewPages:
                 <li>Fotos Exclusivas e Videos Exclusivos</li>
                 <li>Videos Masturbando</li>
             </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 50px);">
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
                 <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
-                    background: var(--cta-color);
+                    background: linear-gradient(45deg, #9400d3, #ff1493);
                     color: white;
                     text-align: center;
-                    padding: 12px;
+                    padding: 10px;
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
@@ -641,11 +539,11 @@ class NewPages:
         """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
 
         st.markdown("""
-        <div class="package-box">
+        <div class="package-box package-extreme">
             <div class="package-header">
-                <h3 style="color: var(--text-dark);">EXTREME</h3>
-                <div class="package-price">R$ 199,90</div>
-                <small style="color: #666;">para verdadeiros fãs</small>
+                <h3 style="color: #ff0066;">EXTREME</h3>
+                <div class="package-price" style="color: #ff0066;">R$ 199,90</div>
+                <small>para verdadeiros fãs</small>
             </div>
             <ul class="package-benefits">
                 <li>30 fotos ultra-exclusivas</li>
@@ -658,13 +556,13 @@ class NewPages:
                 <li>Videos Transando</li>
                 <li>Acesso a conteúdos futuros</li>
             </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 50px);">
+            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
                 <a href="{checkout_extreme}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
-                    background: var(--cta-color);
+                    background: linear-gradient(45deg, #ff0066, #9400d3);
                     color: white;
                     text-align: center;
-                    padding: 12px;
+                    padding: 10px;
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
@@ -682,9 +580,9 @@ class NewPages:
 
         st.markdown("""
         <div class="countdown-container">
-            <h3 style="margin:0; color: white;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="countdown" style="font-size: 1.5em; font-weight: bold; color: white;">23:59:59</div>
-            <p style="margin:5px 0 0; color: rgba(255,255,255,0.8);">Termina em breve!</p>
+            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
+            <p style="margin:5px 0 0;">Termina em breve!</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -705,7 +603,7 @@ class NewPages:
             if (hours < 0) { hours = 23; }
             
             countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padstart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             setTimeout(updateCountdown, 1000);
         }
@@ -745,29 +643,27 @@ class NewPages:
             with st.container():
                 st.markdown(f"""
                 <div class="offer-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: var(--text-dark); margin: 0;">{plan['name']}</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>{plan['name']}</h3>
                         {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
                     </div>
-                    <div style="margin: 10px 0 15px;">
-                        <span style="font-size: 1.8em; color: var(--cta-color); font-weight: bold;">{plan['price']}</span>
+                    <div style="margin: 10px 0;">
+                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
                         <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
                     </div>
-                    <ul style="padding-left: 20px; color: var(--text-dark);">
-                        {''.join([f'<li style="margin-bottom: 8px;">{benefit}</li>' for benefit in plan['benefits']])}
+                    <ul style="padding-left: 20px;">
+                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
                     </ul>
-                    <div style="text-align: center; margin-top: 20px;">
+                    <div style="text-align: center; margin-top: 15px;">
                         <a href="{plan['link']}" style="
-                            background: var(--cta-color);
+                            background: linear-gradient(45deg, #ff1493, #9400d3);
                             color: white;
-                            padding: 12px 24px;
+                            padding: 10px 20px;
                             border-radius: 30px;
                             text-decoration: none;
                             display: inline-block;
                             font-weight: bold;
-                            transition: all 0.3s;
-                        " onmouseover="this.style.transform='scale(1.05)'" 
-                        onmouseout="this.style.transform='scale(1)'">
+                        ">
                             Assinar {plan['name']}
                         </a>
                     </div>
@@ -779,14 +675,14 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ATUALIZADO)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
     def get_chat_audio_player():
         return f"""
         <div style="
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+            background: linear-gradient(45deg, #ff66b3, #ff1493);
             border-radius: 15px;
             padding: 12px;
             margin: 5px 0;
@@ -805,21 +701,21 @@ class UiService:
         call_container = st.empty()
         call_container.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+            background: linear-gradient(135deg, #1e0033, #3c0066);
             border-radius: 20px;
             padding: 30px;
             max-width: 300px;
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid var(--cta-color);
+            border: 2px solid #ff66b3;
             text-align: center;
             color: white;
             animation: pulse-ring 2s infinite;
         ">
             <div style="font-size: 3rem;">📱</div>
-            <h3 style="color: var(--cta-color); margin-bottom: 5px;">Ligando para Paloma...</h3>
+            <h3 style="color: #ff66b3; margin-bottom: 5px;">Ligando para Paloma...</h3>
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px;">
-                <div style="width: 10px; height: 10px; background: var(--cta-color); border-radius: 50%;"></div>
+                <div style="width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
                 <span style="font-size: 0.9rem;">Online agora</span>
             </div>
         </div>
@@ -835,18 +731,18 @@ class UiService:
         time.sleep(LIGANDO_DELAY)
         call_container.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+            background: linear-gradient(135deg, #1e0033, #3c0066);
             border-radius: 20px;
             padding: 30px;
             max-width: 300px;
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid var(--cta-color);
+            border: 2px solid #4CAF50;
             text-align: center;
             color: white;
         ">
-            <div style="font-size: 3rem; color: var(--cta-color);">✓</div>
-            <h3 style="color: var(--cta-color); margin-bottom: 5px;">Chamada atendida!</h3>
+            <div style="font-size: 3rem; color: #4CAF50;">✓</div>
+            <h3 style="color: #4CAF50; margin-bottom: 5px;">Chamada atendida!</h3>
             <p style="font-size: 0.9rem; margin:0;">Paloma está te esperando...</p>
         </div>
         """, unsafe_allow_html=True)
@@ -874,7 +770,7 @@ class UiService:
             
             container.markdown(f"""
             <div style="
-                color: #666;
+                color: #888;
                 font-size: 0.8em;
                 padding: 2px 8px;
                 border-radius: 10px;
@@ -904,7 +800,7 @@ class UiService:
             
             container.markdown(f"""
             <div style="
-                color: #666;
+                color: #888;
                 font-size: 0.8em;
                 padding: 2px 8px;
                 border-radius: 10px;
@@ -924,18 +820,16 @@ class UiService:
 
     @staticmethod
     def age_verification():
-        apply_global_styles()
-        
         st.markdown("""
         <style>
             .age-verification {
                 max-width: 600px;
                 margin: 2rem auto;
                 padding: 2rem;
-                background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                background: linear-gradient(145deg, #1e0033, #3c0066);
                 border-radius: 15px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                border: 1px solid var(--cta-color);
+                border: 1px solid rgba(255, 102, 179, 0.2);
                 color: white;
             }
             .age-header {
@@ -946,13 +840,13 @@ class UiService:
             }
             .age-icon {
                 font-size: 2.5rem;
-                color: var(--cta-color);
+                color: #ff66b3;
             }
             .age-title {
                 font-size: 1.8rem;
                 font-weight: 700;
                 margin: 0;
-                color: var(--cta-color);
+                color: #ff66b3;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -965,8 +859,8 @@ class UiService:
                     <h1 class="age-title">Verificação de Idade</h1>
                 </div>
                 <div class="age-content">
-                    <p style="color: white;">Este site contém material explícito destinado exclusivamente a adultos maiores de 18 anos.</p>
-                    <p style="color: white;">Ao acessar este conteúdo, você declara estar em conformidade com todas as leis locais aplicáveis.</p>
+                    <p>Este site contém material explícito destinado exclusivamente a adultos maiores de 18 anos.</p>
+                    <p>Ao acessar este conteúdo, você declara estar em conformidade com todas as leis locais aplicáveis.</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -983,11 +877,13 @@ class UiService:
 
     @staticmethod
     def setup_sidebar():
-        apply_global_styles()
-        
         with st.sidebar:
             st.markdown("""
             <style>
+                [data-testid="stSidebar"] {
+                    background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+                    border-right: 1px solid #ff66b3 !important;
+                }
                 .sidebar-logo-container {
                     margin: -25px -25px 0px -25px;
                     padding: 0;
@@ -1004,13 +900,13 @@ class UiService:
                 }
                 .sidebar-header img {
                     border-radius: 50%; 
-                    border: 2px solid var(--cta-color);
+                    border: 2px solid #ff66b3;
                     width: 80px;
                     height: 80px;
                     object-fit: cover;
                 }
                 .vip-badge {
-                    background: linear-gradient(135deg, var(--cta-color), #008a4a);
+                    background: linear-gradient(45deg, #ff1493, #9400d3);
                     padding: 15px;
                     border-radius: 8px;
                     color: white;
@@ -1023,7 +919,7 @@ class UiService:
                     border-radius: 5px;
                 }
                 .menu-item:hover {
-                    background: rgba(0, 191, 99, 0.2);
+                    background: rgba(255, 102, 179, 0.2);
                 }
                 .sidebar-logo {
                     width: 280px;
@@ -1047,7 +943,7 @@ class UiService:
             </style>
             """, unsafe_allow_html=True)
             
-            # Logo no topo
+            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
             st.markdown(f"""
             <div class="sidebar-logo-container">
                 <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
@@ -1057,7 +953,7 @@ class UiService:
             st.markdown("""
             <div class="sidebar-header">
                 <img src="{profile_img}" alt="Paloma">
-                <h3 style="color: white; margin-top: 10px;">Paloma Premium</h3>
+                <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
@@ -1081,18 +977,18 @@ class UiService:
             st.markdown("### 🔒 Sua Conta")
             
             status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
-            status_color = "var(--cta-color)" if status == "VIP Ativo" else "#f39c12"
+            status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
             
             st.markdown(f"""
             <div style="
-                background: rgba(0, 191, 99, 0.1); 
+                background: rgba(255, 20, 147, 0.1); 
                 padding: 10px; 
                 border-radius: 8px;
             ">
-                <p style="margin: 0; font-size: 0.9em; color: white;">
+                <p style="margin: 0; font-size: 0.9em;">
                     Status: <span style="color: {status_color}">{status}</span>
                 </p>
-                <p style="margin: 5px 0 0; font-size: 0.8em; color: rgba(255,255,255,0.7);">
+                <p style="margin: 5px 0 0; font-size: 0.8em;">
                     Expira em: {random.randint(1,30)} dias
                 </p>
             </div>
@@ -1115,7 +1011,7 @@ class UiService:
             
             st.markdown("---")
             st.markdown("""
-            <div style="text-align: center; font-size: 0.7em; color: rgba(255,255,255,0.6);">
+            <div style="text-align: center; font-size: 0.7em; color: #888;">
                 <p>© 2024 Paloma Premium</p>
                 <p>🔞 Conteúdo para maiores de 18 anos</p>
             </div>
@@ -1123,17 +1019,15 @@ class UiService:
 
     @staticmethod
     def show_gallery_page(conn):
-        apply_global_styles()
-        
         st.title("📸 Galeria Privada")
         st.markdown("""
         <div style="
-            background: rgba(0, 191, 99, 0.1);
+            background: rgba(255, 20, 147, 0.1);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
         ">
-            <p style="margin: 0; color: var(--text-dark);">Conteúdo exclusivo para assinantes VIP</p>
+            <p style="margin: 0;">Conteúdo exclusivo para assinantes VIP</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1150,9 +1044,8 @@ class UiService:
                 <div style="
                     text-align: center;
                     font-size: 0.8em;
-                    color: var(--cta-color);
+                    color: #ff66b3;
                     margin-top: -10px;
-                    font-weight: 500;
                 ">
                     🔒 Conteúdo bloqueado
                 </div>
@@ -1161,8 +1054,8 @@ class UiService:
         st.markdown("---")
         st.markdown("""
         <div style="text-align: center;">
-            <h4 style="color: var(--text-dark);">🔓 Desbloqueie acesso completo</h4>
-            <p style="color: var(--text-dark);">Assine o plano VIP para ver todos os conteúdos</p>
+            <h4>🔓 Desbloqueie acesso completo</h4>
+            <p>Assine o plano VIP para ver todos os conteúdos</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1214,14 +1107,14 @@ class UiService:
         <style>
             div[data-testid="stHorizontalBlock"] > div > div > button {
                 color: white !important;
-                background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end)) !important;
+                border: 1px solid #ff66b3 !important;
+                background: rgba(255, 102, 179, 0.15) !important;
                 transition: all 0.3s !important;
                 font-size: 0.8rem !important;
-                border: none !important;
             }
             div[data-testid="stHorizontalBlock"] > div > div > button:hover {
                 transform: translateY(-2px) !important;
-                box-shadow: 0 2px 8px rgba(16, 23, 40, 0.3) !important;
+                box-shadow: 0 2px 8px rgba(255, 102, 179, 0.3) !important;
             }
             @media (max-width: 400px) {
                 div[data-testid="stHorizontalBlock"] > div > div > button {
@@ -1234,26 +1127,25 @@ class UiService:
 
     @staticmethod
     def enhanced_chat_ui(conn):
-        apply_global_styles()
-        
         st.markdown("""
         <style>
             .chat-header {
-                background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                background: linear-gradient(90deg, #ff66b3, #ff1493);
                 color: white;
                 padding: 15px;
                 border-radius: 10px;
                 margin-bottom: 20px;
                 text-align: center;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
             .stAudio {
                 border-radius: 20px !important;
-                background: rgba(0, 191, 99, 0.1) !important;
+                background: rgba(255, 102, 179, 0.1) !important;
                 padding: 10px !important;
                 margin: 10px 0 !important;
             }
             audio::-webkit-media-controls-panel {
-                background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end)) !important;
+                background: linear-gradient(45deg, #ff66b3, #ff1493) !important;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -1268,13 +1160,13 @@ class UiService:
         
         st.sidebar.markdown(f"""
         <div style="
-            background: rgba(0, 191, 99, 0.1);
+            background: rgba(255, 20, 147, 0.1);
             padding: 10px;
             border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
         ">
-            <p style="margin:0; font-size:0.9em; color: white;">
+            <p style="margin:0; font-size:0.9em;">
                 Mensagens hoje: <strong>{st.session_state.request_count}/{Config.MAX_REQUESTS_PER_SESSION}</strong>
             </p>
             <progress value="{st.session_state.request_count}" max="{Config.MAX_REQUESTS_PER_SESSION}" style="width:100%; height:6px;"></progress>
@@ -1290,14 +1182,14 @@ class UiService:
             margin-top: 20px;
             padding: 10px;
             font-size: 0.8em;
-            color: #666;
+            color: #888;
         ">
             <p>🔒 Conversa privada • ✉️ Suas mensagens são confidenciais</p>
         </div>
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -1342,11 +1234,10 @@ class ChatService:
                     with st.chat_message("user", avatar="🧑"):
                         st.markdown(f"""
                         <div style="
-                            background: #f5f7fa;
+                            background: rgba(0, 0, 0, 0.1);
                             padding: 12px;
                             border-radius: 18px 18px 0 18px;
                             margin: 5px 0;
-                            color: var(--text-dark);
                         ">
                             {msg["content"]}
                         </div>
@@ -1361,7 +1252,7 @@ class ChatService:
                             with st.chat_message("assistant", avatar="💋"):
                                 st.markdown(f"""
                                 <div style="
-                                    background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
                                     color: white;
                                     padding: 12px;
                                     border-radius: 18px 18px 18px 0;
@@ -1384,7 +1275,7 @@ class ChatService:
                             with st.chat_message("assistant", avatar="💋"):
                                 st.markdown(f"""
                                 <div style="
-                                    background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
                                     color: white;
                                     padding: 12px;
                                     border-radius: 18px 18px 18px 0;
@@ -1397,7 +1288,7 @@ class ChatService:
                         with st.chat_message("assistant", avatar="💋"):
                             st.markdown(f"""
                             <div style="
-                                background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                                background: linear-gradient(45deg, #ff66b3, #ff1493);
                                 color: white;
                                 padding: 12px;
                                 border-radius: 18px 18px 18px 0;
@@ -1473,11 +1364,10 @@ class ChatService:
             with st.chat_message("user", avatar="🧑"):
                 st.markdown(f"""
                 <div style="
-                    background: #f5f7fa;
+                    background: rgba(0, 0, 0, 0.1);
                     padding: 12px;
                     border-radius: 18px 18px 0 18px;
                     margin: 5px 0;
-                    color: var(--text-dark);
                 ">
                     {cleaned_input}
                 </div>
@@ -1489,7 +1379,7 @@ class ChatService:
                 if isinstance(resposta, dict):
                     st.markdown(f"""
                     <div style="
-                        background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
                         color: white;
                         padding: 12px;
                         border-radius: 18px 18px 18px 0;
@@ -1511,7 +1401,7 @@ class ChatService:
                 else:
                     st.markdown(f"""
                     <div style="
-                        background: linear-gradient(135deg, var(--menu-gradient-start), var(--menu-gradient-end));
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
                         color: white;
                         padding: 12px;
                         border-radius: 18px 18px 18px 0;
@@ -1542,10 +1432,45 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADA)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
-    apply_global_styles()
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
+            border-right: 1px solid #ff66b3 !important;
+        }
+        .stButton button {
+            background: rgba(255, 20, 147, 0.2) !important;
+            color: white !important;
+            border: 1px solid #ff66b3 !important;
+            transition: all 0.3s !important;
+        }
+        .stButton button:hover {
+            background: rgba(255, 20, 147, 0.4) !important;
+            transform: translateY(-2px) !important;
+        }
+        [data-testid="stChatInput"] {
+            background: rgba(255, 102, 179, 0.1) !important;
+            border: 1px solid #ff66b3 !important;
+        }
+        div.stButton > button:first-child {
+            background: linear-gradient(45deg, #ff1493, #9400d3) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 10px 24px !important;
+            font-weight: bold !important;
+            transition: all 0.3s !important;
+            box-shadow: 0 4px 8px rgba(255, 20, 147, 0.3) !important;
+        }
+        div.stButton > button:first-child:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 12px rgba(255, 20, 147, 0.4) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
@@ -1573,9 +1498,9 @@ def main():
         with col2:
             st.markdown("""
             <div style="text-align: center; margin: 50px 0;">
-                <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid var(--cta-color);">
-                <h2 style="color: var(--text-dark); margin-top: 15px;">Paloma</h2>
-                <p style="font-size: 1.1em; color: var(--text-dark);">Estou pronta para você, amor...</p>
+                <img src="{profile_img}" width="120" style="border-radius: 50%; border: 3px solid #ff66b3;">
+                <h2 style="color: #ff66b3; margin-top: 15px;">Paloma</h2>
+                <p style="font-size: 1.1em;">Estou pronta para você, amor...</p>
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
