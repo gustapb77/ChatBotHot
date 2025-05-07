@@ -332,7 +332,6 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        st.subheader("Prazer, Eu sou a Paloma!")
         cols = st.columns(3)
         
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
@@ -1019,7 +1018,6 @@ class UiService:
 
     @staticmethod
     def show_gallery_page(conn):
-        st.title("📸 Galeria Privada")
         st.markdown("""
         <div style="
             background: rgba(255, 20, 147, 0.1);
@@ -1477,7 +1475,8 @@ def main():
     
     conn = st.session_state.db_conn
     
-    st.title("💋 Paloma - Conteúdo Exclusivo")
+    # Remoção completa do título (linha original comentada)
+    # st.title("💋 Paloma - Conteúdo Exclusivo")  # LINHA REMOVIDA
     
     ChatService.initialize_session(conn)
     
