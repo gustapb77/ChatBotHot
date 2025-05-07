@@ -55,6 +55,71 @@ class Config:
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
+# OTIMIZAÇÕES DE UI (NOVO)
+# ======================
+def apply_ui_fixes():
+    """Remove elementos indesejados da interface do Streamlit"""
+    st.markdown("""
+    <style>
+        /* Remove menus padrão */
+        #MainMenu, header, footer {visibility: hidden !important;}
+        /* Remove botões administrativos */
+        .stDeployButton, .stToolbar {display:none !important;}
+        /* Otimiza espaçamentos */
+        .block-container {padding-top: 0.5rem !important;}
+        /* Ajusta a sidebar */
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 0 !important;
+        }
+        /* Remove espaço em branco superior */
+        div.stApp > [data-testid="stVerticalBlock"] {
+            gap: 0.5rem !important;
+        }
+        /* Esconde status do Streamlit */
+        .stStatusWidget {opacity: 0 !important;}
+        /* Previne flickering em mobile */
+        @media (max-width: 768px) {
+            [data-testid="stSidebar"] {
+                transition: none !important;
+            }
+        }
+        /* Ajusta o chat input */
+        [data-testid="stChatInput"] {
+            bottom: 10px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Script para prevenção de flickering
+    st.markdown("""
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hideElements = () => {
+                const elementsToHide = [
+                    '[data-testid="stToolbar"]',
+                    '[data-testid="stStatusWidget"]',
+                    '.stDeployButton',
+                    'header',
+                    'footer'
+                ];
+                
+                elementsToHide.forEach(selector => {
+                    const el = window.parent.document.querySelector(selector);
+                    if (el) el.style.display = 'none';
+                });
+                
+                // Ajuste contínuo para prevenir flickering
+                const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) sidebar.style.top = '0px';
+            };
+            
+            hideElements();
+            setInterval(hideElements, 200);
+        });
+    </script>
+    """, unsafe_allow_html=True)
+
+# ======================
 # PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
@@ -332,6 +397,7 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
+        st.subheader("Prazer, Eu sou a Paloma!")
         cols = st.columns(3)
         
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
@@ -1433,50 +1499,18 @@ class ChatService:
 # APLICAÇÃO PRINCIPAL
 # ======================
 def main():
-    st.markdown("""
-    <style>
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1e0033 0%, #3c0066 100%) !important;
-            border-right: 1px solid #ff66b3 !important;
-        }
-        .stButton button {
-            background: rgba(255, 20, 147, 0.2) !important;
-            color: white !important;
-            border: 1px solid #ff66b3 !important;
-            transition: all 0.3s !important;
-        }
-        .stButton button:hover {
-            background: rgba(255, 20, 147, 0.4) !important;
-            transform: translateY(-2px) !important;
-        }
-        [data-testid="stChatInput"] {
-            background: rgba(255, 102, 179, 0.1) !important;
-            border: 1px solid #ff66b3 !important;
-        }
-        div.stButton > button:first-child {
-            background: linear-gradient(45deg, #ff1493, #9400d3) !important;
-            color: white !important;
-            border: none !important;
-            border-radius: 20px !important;
-            padding: 10px 24px !important;
-            font-weight: bold !important;
-            transition: all 0.3s !important;
-            box-shadow: 0 4px 8px rgba(255, 20, 147, 0.3) !important;
-        }
-        div.stButton > button:first-child:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 12px rgba(255, 20, 147, 0.4) !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Configurações iniciais de UI
+    st.set_page_config(
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items=None
+    )
+    apply_ui_fixes()
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
     
     conn = st.session_state.db_conn
-    
-    # Remoção completa do título (linha original comentada)
-    # st.title("💋 Paloma - Conteúdo Exclusivo")  # LINHA REMOVIDA
     
     ChatService.initialize_session(conn)
     
