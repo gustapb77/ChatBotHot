@@ -23,17 +23,48 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Oculta elementos padrão do Streamlit
+# Oculta todos os elementos padrão do Streamlit
 hide_streamlit_style = """
 <style>
-    #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}
-    div[data-testid="stToolbar"], div[data-testid="stDecoration"],
-    div[data-testid="stStatusWidget"], #MainMenu, header, footer,
-    .stDeployButton {display: none !important;}
-    .block-container {padding-top: 0rem !important;}
-    [data-testid="stVerticalBlock"] {gap: 0.5rem !important;}
-    [data-testid="stHorizontalBlock"] {gap: 0.5rem !important;}
-    .stApp {margin: 0 !important; padding: 0 !important;}
+    #root > div:nth-child(1) > div > div > div > div > section > div {
+        padding-top: 0rem;
+    }
+    div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+    div[data-testid="stDecoration"] {
+        display: none !important;
+    }
+    div[data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+    #MainMenu {
+        display: none !important;
+    }
+    header {
+        display: none !important;
+    }
+    footer {
+        display: none !important;
+    }
+    .stDeployButton {
+        display: none !important;
+    }
+    .block-container {
+        padding-top: 0rem !important;
+    }
+    /* Ajustes específicos para o chat */
+    [data-testid="stVerticalBlock"] {
+        gap: 0.5rem !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        gap: 0.5rem !important;
+    }
+    /* Remove borda branca ao redor */
+    .stApp {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -42,14 +73,17 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = st.secrets.get("GEMINI_API_KEY", "SUA_CHAVE_AQUI")
+    # Configurações da API
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     
-    # URLs (mantidas como no original)
+    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
+    
+    # URLs de assinatura VIP
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
@@ -58,9 +92,11 @@ class Config:
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
     
-    # Mídia (mantida como no original)
-    AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/main/assets/audio/paloma_audio.mp3"
+    # Configurações de áudio
+    AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
+    
+    # Imagens
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -75,7 +111,7 @@ class Config:
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (ORIGINAL PRESERVADO)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -128,6 +164,7 @@ def load_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
     saved_data = db.load_state(user_id) or {}
+    
     for key, value in saved_data.items():
         if key not in st.session_state:
             st.session_state[key] = value
@@ -135,16 +172,23 @@ def load_persistent_data():
 def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
+    
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
         'current_page', 'show_vip_offer', 'session_id'
     ]
-    data_to_save = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
+    
+    data_to_save = {
+        key: st.session_state.get(key)
+        for key in persistent_keys
+        if key in st.session_state
+    }
+    
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS (ORIGINAL PRESERVADO)
+# MODELOS DE DADOS
 # ======================
 class Persona:
     PALOMA = """
@@ -168,7 +212,7 @@ class Persona:
     """
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (ORIGINAL PRESERVADO)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -208,78 +252,30 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO COM DETECÇÃO INTELIGENTE)
+# SERVIÇOS DE API (ATUALIZADO COM DETECÇÃO ORGÂNICA DE INTERESSE)
 # ======================
 class ApiService:
     @staticmethod
-    def detect_interest_with_gemini(prompt):
-        """Detecção inteligente de interesse usando Gemini"""
-        headers = {'Content-Type': 'application/json'}
-        
-        analysis_prompt = f"""
-        [ANÁLISE DE INTENÇÃO - CHAT ADULTO PREMIUM]
-        Analise se o usuário demonstrou interesse em:
-        - Ver conteúdo exclusivo (fotos/vídeos)
-        - Saber sobre assinaturas/VIP
-        - Comprar conteúdo
-        - Pedidos para "mostrar" algo
-
-        FORMATE SUA RESPOSTA APENAS COM:
-        INTERESSE: SIM
-        ou
-        INTERESTE: NÃO
-
-        Exemplos:
-        "quero ver" → INTERESSE: SIM
-        "mostra aí" → INTERESSE: SIM
-        "tudo bem?" → INTERESSE: NÃO
-        "como assinar?" → INTERESSE: SIM
-
-        Mensagem para análise:
-        "{prompt}"
-        """
-        
-        data = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": analysis_prompt}]
-            }],
-            "safetySettings": [{
-                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "threshold": "BLOCK_NONE"
-            }]
-        }
-        
-        try:
-            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            response_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "INTERESSE: NÃO")
-            return "INTERESSE: SIM" in response_text.upper()
-        except Exception:
-            return False
-
-    @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # 1. Verifica interesse inteligente
-        if ApiService.detect_interest_with_gemini(prompt):
+        """Versão atualizada com detecção orgânica de interesse"""
+        # Primeiro analisa a intenção do usuário
+        intent_analysis = ApiService._analyze_intent(prompt)
+        
+        # Se detectar interesse relevante, gera resposta com CTA
+        if intent_analysis.get("show_cta", False):
+            resposta = ApiService._generate_organic_cta_response(intent_analysis)
             DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            
-            resposta = {
-                "text": "Quer ver tudo amor? 💋",
-                "button": True,
-                "button_text": "Ver Ofertas Exclusivas",
-                "button_target": "offers"
-            }
-            
             DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
             return resposta
         
-        # 2. Resposta normal da conversa
+        # Caso contrário, processa como mensagem normal
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda em no máximo 15 palavras"}]
+                "parts": [{
+                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda de forma natural em no máximo 20 palavras"
+                }]
             }]
         }
         
@@ -293,19 +289,127 @@ class ApiService:
             
             resposta_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
             
-            return {
+            # Adiciona ganchos naturais ocasionalmente
+            if random.random() > 0.7:
+                hooks = [
+                    " Tenho um segredinho pra te contar...",
+                    " Quer saber uma coisa especial?",
+                    " Meus VIPs viram algo incrível hoje..."
+                ]
+                resposta_text += random.choice(hooks)
+            
+            resposta = {
                 "text": resposta_text,
                 "button": False
             }
             
-        except requests.exceptions.RequestException:
+            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+            return resposta
+        
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erro na conexão: {str(e)}")
             return {
                 "text": "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋",
                 "button": False
             }
+        except Exception as e:
+            st.error(f"Erro inesperado: {str(e)}")
+            return {
+                "text": "Hmm... que tal conversarmos sobre algo mais interessante? 😉",
+                "button": False
+            }
+
+    @staticmethod
+    def _analyze_intent(prompt):
+        """Analisa a mensagem do usuário para detectar intenção de forma orgânica"""
+        headers = {'Content-Type': 'application/json'}
+        analysis_prompt = f"""
+        Analise esta mensagem como um especialista em vendas para determinar se o usuário está mostrando 
+        interesse genuíno em conteúdo adulto premium. Considere:
+        - Perguntas sobre preços, assinaturas ou conteúdo
+        - Solicitações para ver fotos/vídeos
+        - Expressões de desejo ou curiosidade
+        - Qualquer indicação de interesse em adquirir algo
+
+        Mensagem: "{prompt}"
+
+        Responda APENAS com JSON contendo:
+        {{
+            "has_interest": boolean,
+            "interest_type": string|null,
+            "show_cta": boolean,
+            "cta_type": "soft"|"hard"|null
+        }}
+        """
+        
+        data = {
+            "contents": [{
+                "role": "user",
+                "parts": [{"text": analysis_prompt}]
+            }]
+        }
+        
+        try:
+            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            response_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
+            return json.loads(response_text.strip())
+        except Exception:
+            return {"has_interest": False, "show_cta": False}
+
+    @staticmethod
+    def _generate_organic_cta_response(intent_analysis):
+        """Gera respostas com CTA que parecem naturais"""
+        interest_type = intent_analysis.get("interest_type", "")
+        cta_type = intent_analysis.get("cta_type", "soft")
+        
+        # Respostas baseadas no tipo de interesse
+        interest_responses = {
+            "preços": [
+                "Tenho umas promoções bem gostosas pros meus queridinhos...",
+                "Vou te contar um segredo sobre os preços...",
+                "Só hoje tem uma condição especial para novos assinantes..."
+            ],
+            "fotos/vídeos": [
+                "Quer ver o que preparei especialmente hoje?",
+                "Tenho umas fotinhas que você vai adorar...",
+                "Meus VIPs estão vendo algo bem quente agora..."
+            ],
+            "default": [
+                "Tenho umas coisinhas especiais que você ia adorar ver...",
+                "Sabe que tenho conteúdo bem mais ousado pros meus VIPs, né?",
+                "Se quiser ver tudo mesmo, tenho um acesso especial...",
+                "Meus assinantes estão vendo algo que você ia adorar..."
+            ]
+        }
+        
+        # Seleciona o conjunto de respostas apropriado
+        if interest_type in interest_responses:
+            possible_responses = interest_responses[interest_type]
+        else:
+            possible_responses = interest_responses["default"]
+        
+        # Respostas mais diretas para CTA "hard"
+        if cta_type == "hard":
+            possible_responses = [
+                "Quer ver tudinho amor? Tenho um pacote especial pra você...",
+                "Meus assinantes VIP estão vendo isso agora mesmo...",
+                "Isso é só uma amostra do que meus VIPs veem todo dia",
+                "Vou te mostrar algo que vai te deixar maluco..."
+            ]
+        
+        resposta_text = random.choice(possible_responses)
+        
+        return {
+            "text": resposta_text,
+            "button": True,
+            "button_text": "🔥 Ver Ofertas Exclusivas 🔥",
+            "button_target": "offers"
+        }
 
 # ======================
-# PÁGINAS (ORIGINAL COMPLETO PRESERVADO)
+# PÁGINAS (MANTIDO ORIGINAL)
 # ======================
 class NewPages:
     @staticmethod
@@ -332,7 +436,7 @@ class NewPages:
         </style>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"""
+        st.markdown("""
         <div class="hero-banner">
             <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
             <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
@@ -351,6 +455,7 @@ class NewPages:
         """, unsafe_allow_html=True)
 
         cols = st.columns(3)
+        
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
             with col:
                 st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
@@ -363,7 +468,10 @@ class NewPages:
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("💎 Tornar-se VIP Agora", key="vip_button_home", use_container_width=True, type="primary"):
+        if st.button("💎 Tornar-se VIP Agora", 
+                    key="vip_button_home", 
+                    use_container_width=True,
+                    type="primary"):
             st.session_state.current_page = "offers"
             st.rerun()
 
@@ -375,21 +483,99 @@ class NewPages:
     def show_offers_page():
         st.markdown("""
         <style>
-            .package-container {display: flex; justify-content: space-between; margin: 30px 0; gap: 20px;}
-            .package-box {flex: 1; background: rgba(30, 0, 51, 0.3); border-radius: 15px; padding: 20px; border: 1px solid; transition: all 0.3s; min-height: 400px; position: relative; overflow: hidden;}
-            .package-box:hover {transform: translateY(-5px); box-shadow: 0 10px 20px rgba(255, 102, 179, 0.3);}
-            .package-start {border-color: #ff66b3;}
-            .package-premium {border-color: #9400d3;}
-            .package-extreme {border-color: #ff0066;}
-            .package-header {text-align: center; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255, 102, 179, 0.3);}
-            .package-price {font-size: 1.8em; font-weight: bold; margin: 10px 0;}
-            .package-benefits {list-style-type: none; padding: 0;}
-            .package-benefits li {padding: 8px 0; position: relative; padding-left: 25px;}
-            .package-benefits li:before {content: "✓"; color: #ff66b3; position: absolute; left: 0; font-weight: bold;}
-            .package-badge {position: absolute; top: 15px; right: -30px; background: #ff0066; color: white; padding: 5px 30px; transform: rotate(45deg); font-size: 0.8em; font-weight: bold; width: 100px; text-align: center;}
-            .countdown-container {background: linear-gradient(45deg, #ff0066, #ff66b3); color: white; padding: 15px; border-radius: 10px; margin: 40px 0; box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3); text-align: center;}
-            .offer-card {border: 1px solid #ff66b3; border-radius: 15px; padding: 20px; margin-bottom: 20px; background: rgba(30, 0, 51, 0.3);}
-            .offer-highlight {background: linear-gradient(45deg, #ff0066, #ff66b3); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;}
+            .package-container {
+                display: flex;
+                justify-content: space-between;
+                margin: 30px 0;
+                gap: 20px;
+            }
+            .package-box {
+                flex: 1;
+                background: rgba(30, 0, 51, 0.3);
+                border-radius: 15px;
+                padding: 20px;
+                border: 1px solid;
+                transition: all 0.3s;
+                min-height: 400px;
+                position: relative;
+                overflow: hidden;
+            }
+            .package-box:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(255, 102, 179, 0.3);
+            }
+            .package-start {
+                border-color: #ff66b3;
+            }
+            .package-premium {
+                border-color: #9400d3;
+            }
+            .package-extreme {
+                border-color: #ff0066;
+            }
+            .package-header {
+                text-align: center;
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
+            }
+            .package-price {
+                font-size: 1.8em;
+                font-weight: bold;
+                margin: 10px 0;
+            }
+            .package-benefits {
+                list-style-type: none;
+                padding: 0;
+            }
+            .package-benefits li {
+                padding: 8px 0;
+                position: relative;
+                padding-left: 25px;
+            }
+            .package-benefits li:before {
+                content: "✓";
+                color: #ff66b3;
+                position: absolute;
+                left: 0;
+                font-weight: bold;
+            }
+            .package-badge {
+                position: absolute;
+                top: 15px;
+                right: -30px;
+                background: #ff0066;
+                color: white;
+                padding: 5px 30px;
+                transform: rotate(45deg);
+                font-size: 0.8em;
+                font-weight: bold;
+                width: 100px;
+                text-align: center;
+            }
+            .countdown-container {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 40px 0;
+                box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
+                text-align: center;
+            }
+            .offer-card {
+                border: 1px solid #ff66b3;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: rgba(30, 0, 51, 0.3);
+            }
+            .offer-highlight {
+                background: linear-gradient(45deg, #ff0066, #ff66b3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
         </style>
         """, unsafe_allow_html=True)
 
@@ -402,7 +588,7 @@ class NewPages:
 
         st.markdown('<div class="package-container">', unsafe_allow_html=True)
         
-        st.markdown(f"""
+        st.markdown("""
         <div class="package-box package-start">
             <div class="package-header">
                 <h3 style="color: #ff66b3;">START</h3>
@@ -413,11 +599,11 @@ class NewPages:
                 <li>10 fotos Inéditas</li>
                 <li>3 vídeo Intimos</li>
                 <li>Fotos Exclusivas</li>
-                <li>Videos Intimos</li>
+                <li>Videos Intimos </li>
                 <li>Fotos Buceta</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{Config.CHECKOUT_START}" target="_blank" style="
+                <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
                     background: linear-gradient(45deg, #ff66b3, #ff1493);
                     color: white;
@@ -426,12 +612,17 @@ class NewPages:
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
-                ">QUERO ESTE PACOTE ➔</a>
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
 
-        st.markdown(f"""
+        st.markdown("""
         <div class="package-box package-premium">
             <div class="package-badge">POPULAR</div>
             <div class="package-header">
@@ -449,7 +640,7 @@ class NewPages:
                 <li>Videos Masturbando</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{Config.CHECKOUT_PREMIUM}" target="_blank" style="
+                <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
                     background: linear-gradient(45deg, #9400d3, #ff1493);
                     color: white;
@@ -458,12 +649,17 @@ class NewPages:
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
-                ">QUERO ESTE PACOTE ➔</a>
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
 
-        st.markdown(f"""
+        st.markdown("""
         <div class="package-box package-extreme">
             <div class="package-header">
                 <h3 style="color: #ff0066;">EXTREME</h3>
@@ -482,7 +678,7 @@ class NewPages:
                 <li>Acesso a conteúdos futuros</li>
             </ul>
             <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{Config.CHECKOUT_EXTREME}" target="_blank" style="
+                <a href="{checkout_extreme}" target="_blank" rel="noopener noreferrer" style="
                     display: block;
                     background: linear-gradient(45deg, #ff0066, #9400d3);
                     color: white;
@@ -491,10 +687,15 @@ class NewPages:
                     border-radius: 8px;
                     text-decoration: none;
                     font-weight: bold;
-                ">QUERO ESTE PACOTE ➔</a>
+                    transition: all 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
+                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
+                    QUERO ESTE PACOTE ➔
+                </a>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -527,6 +728,7 @@ class NewPages:
             
             setTimeout(updateCountdown, 1000);
         }
+        
         setTimeout(updateCountdown, 1000);
         </script>
         """, height=0)
@@ -582,7 +784,9 @@ class NewPages:
                             text-decoration: none;
                             display: inline-block;
                             font-weight: bold;
-                        ">Assinar {plan['name']}</a>
+                        ">
+                            Assinar {plan['name']}
+                        </a>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -592,7 +796,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE INTERFACE (ORIGINAL COMPLETO PRESERVADO)
+# SERVIÇOS DE INTERFACE (MANTIDO ORIGINAL)
 # ======================
 class UiService:
     @staticmethod
@@ -860,18 +1064,19 @@ class UiService:
             </style>
             """, unsafe_allow_html=True)
             
+            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
             st.markdown(f"""
             <div class="sidebar-logo-container">
                 <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown(f"""
+            st.markdown("""
             <div class="sidebar-header">
-                <img src="{Config.IMG_PROFILE}" alt="Paloma">
+                <img src="{profile_img}" alt="Paloma">
                 <h3 style="color: #ff66b3; margin-top: 10px;">Paloma Premium</h3>
             </div>
-            """, unsafe_allow_html=True)
+            """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### Menu Exclusivo")
@@ -974,7 +1179,10 @@ class UiService:
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("💎 Tornar-se VIP", key="vip_button_gallery", use_container_width=True, type="primary"):
+        if st.button("💎 Tornar-se VIP", 
+                    key="vip_button_gallery", 
+                    use_container_width=True,
+                    type="primary"):
             st.session_state.current_page = "offers"
             st.rerun()
         
@@ -987,22 +1195,30 @@ class UiService:
     def chat_shortcuts():
         cols = st.columns(4)
         with cols[0]:
-            if st.button("🏠 Início", key="shortcut_home", use_container_width=True):
+            if st.button("🏠 Início", key="shortcut_home", 
+                       help="Voltar para a página inicial",
+                       use_container_width=True):
                 st.session_state.current_page = "home"
                 save_persistent_data()
                 st.rerun()
         with cols[1]:
-            if st.button("📸 Galeria", key="shortcut_gallery", use_container_width=True):
+            if st.button("📸 Galeria", key="shortcut_gallery",
+                       help="Acessar galeria privada",
+                       use_container_width=True):
                 st.session_state.current_page = "gallery"
                 save_persistent_data()
                 st.rerun()
         with cols[2]:
-            if st.button("🎁 Ofertas", key="shortcut_offers", use_container_width=True):
+            if st.button("🎁 Ofertas", key="shortcut_offers",
+                       help="Ver ofertas especiais",
+                       use_container_width=True):
                 st.session_state.current_page = "offers"
                 save_persistent_data()
                 st.rerun()
         with cols[3]:
-            if st.button("💎 VIP", key="shortcut_vip", use_container_width=True):
+            if st.button("💎 VIP", key="shortcut_vip",
+                       help="Acessar área VIP",
+                       use_container_width=True):
                 st.session_state.current_page = "vip"
                 save_persistent_data()
                 st.rerun()
@@ -1093,7 +1309,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO COM DETECÇÃO INTELIGENTE)
+# SERVIÇOS DE CHAT (MANTIDO ORIGINAL)
 # ======================
 class ChatService:
     @staticmethod
@@ -1336,7 +1552,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ORIGINAL PRESERVADO)
+# APLICAÇÃO PRINCIPAL (MANTIDO ORIGINAL)
 # ======================
 def main():
     st.markdown("""
