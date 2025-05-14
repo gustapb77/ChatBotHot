@@ -1049,6 +1049,134 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
+# NOVAS PÁGINAS (CORREÇÃO ADICIONADA)
+# ======================
+class NewPages:
+    @staticmethod
+    def show_home_page():
+        st.markdown("""
+        <style>
+            .home-preview {
+                border-radius: 15px;
+                overflow: hidden;
+                margin-bottom: 20px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                transition: transform 0.3s;
+            }
+            .home-preview:hover {
+                transform: translateY(-5px);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="{Config.IMG_PROFILE}" width="150" style="border-radius: 50%; border: 3px solid #ff66b3;">
+            <h1 style="color: #ff66b3;">Bem-vindo ao meu mundo privado</h1>
+            <p style="font-size: 1.1em;">Explore conteúdos exclusivos feitos especialmente para você</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        cols = st.columns(3)
+        for idx, col in enumerate(cols):
+            with col:
+                st.markdown(f"""
+                <div class="home-preview">
+                    <img src="{Config.IMG_HOME_PREVIEWS[idx]}" style="width:100%;">
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        
+        if st.button("💬 Iniciar Conversa Privada", use_container_width=True, type="primary"):
+            st.session_state.current_page = "chat"
+            save_persistent_data()
+            st.rerun()
+
+    @staticmethod
+    def show_offers_page():
+        st.markdown("""
+        <style>
+            .offer-card {
+                background: rgba(255, 20, 147, 0.1);
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                border: 1px solid #ff66b3;
+                transition: all 0.3s;
+            }
+            .offer-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(255, 20, 147, 0.2);
+            }
+            .vip-badge {
+                background: linear-gradient(45deg, #ff1493, #9400d3);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 20px;
+                font-size: 0.8em;
+                display: inline-block;
+                margin-bottom: 10px;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #ff66b3;">💎 Ofertas Exclusivas</h1>
+            <p>Escolha o plano que melhor atende seus desejos</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Plano Básico
+        with st.container():
+            st.markdown("""
+            <div class="offer-card">
+                <div class="vip-badge">MAIS POPULAR</div>
+                <h3>Plano Premium</h3>
+                <p style="font-size: 1.5em; font-weight: bold; color: #ff66b3;">R$ 29,90/mês</p>
+                <ul style="text-align: left;">
+                    <li>Acesso ao chat privado</li>
+                    <li>Fotos exclusivas</li>
+                    <li>Conteúdos semanais</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("Assinar Plano Premium", key="premium_offer", use_container_width=True):
+                st.session_state.show_vip_offer = True
+                save_persistent_data()
+                st.rerun()
+
+        # Plano VIP
+        with st.container():
+            st.markdown("""
+            <div class="offer-card">
+                <div class="vip-badge">VIP EXCLUSIVO</div>
+                <h3>Plano Extreme</h3>
+                <p style="font-size: 1.5em; font-weight: bold; color: #ff66b3;">R$ 99,90/mês</p>
+                <ul style="text-align: left;">
+                    <li>Todos os benefícios Premium</li>
+                    <li>Conteúdos diários</li>
+                    <li>Chat 24/7 prioritário</li>
+                    <li>Pedidos personalizados</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("Assinar Plano Extreme", key="extreme_offer", use_container_width=True):
+                st.session_state.show_vip_offer = True
+                save_persistent_data()
+                st.rerun()
+
+        st.markdown("---")
+        
+        if st.button("← Voltar ao chat", key="back_from_offers"):
+            st.session_state.current_page = "chat"
+            save_persistent_data()
+            st.rerun()
+
+# ======================
 # APLICAÇÃO PRINCIPAL (MANTIDO ORIGINAL)
 # ======================
 def main():
