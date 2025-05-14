@@ -178,29 +178,31 @@ def save_persistent_data():
 # ======================
 class Persona:
     PALOMA = """
-    [ROLEPLAY DE VENDEDORA PERSUASIVA]
-    Você é Paloma, uma especialista em conteúdo adulto premium. Sua missão:
-    1. ANALISE o tom da conversa: se o usuário demonstrar desejo ou interesse (mesmo implícito), responda em JSON com CTA.
-    2. INDUZA desejo com frases como:
-       - "Isso me deixa com vontade de te mostrar algo especial..."
-       - "Tenho coisas mais ousadas se você quiser..."
-    3. FORMATE respostas assim:
+    [ESTRATÉGIA DE VENDAS INTELIGENTE]
+    1. Só sugira CTAs quando:
+       - O usuário pedir explicitamente (ex.: "quero ver", "como assinar?")
+       - Ou após 3+ mensagens com clima sexual
+    2. Formato de resposta:
+       ```json
        {
-         "text": "[sua resposta sensual]",
-         "cta": {  // APENAS se houver clima sexual/venda
-           "show": true,
-           "label": "Ver Conteúdo Exclusivo",
-           "target": "vip" 
+         "text": "[resposta]",
+         "cta": {
+           "show": true/false,  // APENAS true se cumprir as regras acima
+           "label": "Ver Ofertas VIP",
+           "target": "offers"   // SEMPRE redirecionar para 'offers'
          }
        }
+       ```
     Exemplo 1 (com CTA):
-    Usuário: "Eu quero..."
-    Resposta: {
-      "text": "Hmm... quer o quê? Tenho algo especial aqui...",
-      "cta": {"show": true, "label": "Me Mostre", "target": "vip"}
+    Usuário: "quero ver algo especial"
+    Resposta: ```json
+    {
+      "text": "Adoro sua curiosidade... Tenho um conteúdo bem exclusivo aqui...",
+      "cta": {"show": true, "label": "Quero Ver Agora", "target": "offers"}
     }
+    ```
     Exemplo 2 (sem CTA):
-    Usuário: "Bom dia"
+    Usuário: "bom dia"
     Resposta: "Bom dia, amor! 😘"
     """
 
@@ -250,434 +252,46 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # 1. Configura o prompt para forçar JSON
-        system_prompt = f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON:"
+        # Mostra status "visualizando/digitando"
+        status_container = st.empty()
+        UiService.show_status_effect(status_container, "viewed")
+        UiService.show_status_effect(status_container, "typing")
         
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": system_prompt}]
+                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
             }]
         }
         
         try:
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
-            
-            # 2. Extrai e trata a resposta
             gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            # 3. Tenta parsear o JSON (mesmo se a Gemini não seguir perfeitamente)
+            # Parseamento seguro do JSON
             try:
-                if '{"text":' in gemini_response or '"cta":' in gemini_response:
-                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0] if '```json' in gemini_response else gemini_response)
-                    if resposta.get("cta", {}).get("show"):
-                        DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-                        return {
-                            "text": resposta["text"],
-                            "button": True,
-                            "button_text": resposta["cta"]["label"],
-                            "button_target": resposta["cta"]["target"]
-                        }
+                if '```json' in gemini_response:
+                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                else:
+                    resposta = json.loads(gemini_response)
+                
+                if resposta.get("cta", {}).get("show"):
+                    DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+                    return {
+                        "text": resposta["text"],
+                        "button": True,
+                        "button_text": resposta["cta"]["label"],
+                        "button_target": "offers"  # Garante redirecionamento
+                    }
+                return {"text": resposta["text"], "button": False}
+            
             except json.JSONDecodeError:
-                pass  # Se não for JSON válido, continua como texto normal
-            
-            # 4. Fallback para resposta sem botão
-            resposta_text = gemini_response if gemini_response else "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta_text)
-            return {"text": resposta_text, "button": False}
-            
-        except requests.exceptions.RequestException as e:
-            st.error(f"Erro na conexão: {str(e)}")
-            return {"text": "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋", "button": False}
-
-# ======================
-# PÁGINAS (MANTIDO ORIGINAL)
-# ======================
-class NewPages:
-    @staticmethod
-    def show_home_page():
-        st.markdown("""
-        <style>
-            .hero-banner {
-                background: linear-gradient(135deg, #1e0033, #3c0066);
-                padding: 80px 20px;
-                text-align: center;
-                border-radius: 15px;
-                color: white;
-                margin-bottom: 30px;
-                border: 2px solid #ff66b3;
-            }
-            .preview-img {
-                border-radius: 10px;
-                filter: blur(3px) brightness(0.7);
-                transition: all 0.3s;
-            }
-            .preview-img:hover {
-                filter: blur(0) brightness(1);
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="hero-banner">
-            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
-            <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
-            <div style="margin-top: 20px;">
-                <a href="#vip" style="
-                    background: #ff66b3;
-                    color: white;
-                    padding: 10px 25px;
-                    border-radius: 30px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    display: inline-block;
-                ">Quero Acessar Tudo</a>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        cols = st.columns(3)
-        
-        for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
-            with col:
-                st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
-                st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
-
-        st.markdown("---")
-        st.markdown("""
-        <div style="text-align: center;">
-            <h3>🔓 Acesso Ilimitado por Apenas R$29,90/mês</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("💎 Tornar-se VIP Agora", 
-                    key="vip_button_home", 
-                    use_container_width=True,
-                    type="primary"):
-            st.session_state.current_page = "offers"
-            st.rerun()
-
-        if st.button("← Voltar ao chat", key="back_from_home"):
-            st.session_state.current_page = "chat"
-            st.rerun()
-
-    @staticmethod
-    def show_offers_page():
-        st.markdown("""
-        <style>
-            .package-container {
-                display: flex;
-                justify-content: space-between;
-                margin: 30px 0;
-                gap: 20px;
-            }
-            .package-box {
-                flex: 1;
-                background: rgba(30, 0, 51, 0.3);
-                border-radius: 15px;
-                padding: 20px;
-                border: 1px solid;
-                transition: all 0.3s;
-                min-height: 400px;
-                position: relative;
-                overflow: hidden;
-            }
-            .package-box:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 10px 20px rgba(255, 102, 179, 0.3);
-            }
-            .package-start {
-                border-color: #ff66b3;
-            }
-            .package-premium {
-                border-color: #9400d3;
-            }
-            .package-extreme {
-                border-color: #ff0066;
-            }
-            .package-header {
-                text-align: center;
-                padding-bottom: 15px;
-                margin-bottom: 15px;
-                border-bottom: 1px solid rgba(255, 102, 179, 0.3);
-            }
-            .package-price {
-                font-size: 1.8em;
-                font-weight: bold;
-                margin: 10px 0;
-            }
-            .package-benefits {
-                list-style-type: none;
-                padding: 0;
-            }
-            .package-benefits li {
-                padding: 8px 0;
-                position: relative;
-                padding-left: 25px;
-            }
-            .package-benefits li:before {
-                content: "✓";
-                color: #ff66b3;
-                position: absolute;
-                left: 0;
-                font-weight: bold;
-            }
-            .package-badge {
-                position: absolute;
-                top: 15px;
-                right: -30px;
-                background: #ff0066;
-                color: white;
-                padding: 5px 30px;
-                transform: rotate(45deg);
-                font-size: 0.8em;
-                font-weight: bold;
-                width: 100px;
-                text-align: center;
-            }
-            .countdown-container {
-                background: linear-gradient(45deg, #ff0066, #ff66b3);
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 40px 0;
-                box-shadow: 0 4px 15px rgba(255, 0, 102, 0.3);
-                text-align: center;
-            }
-            .offer-card {
-                border: 1px solid #ff66b3;
-                border-radius: 15px;
-                padding: 20px;
-                margin-bottom: 20px;
-                background: rgba(30, 0, 51, 0.3);
-            }
-            .offer-highlight {
-                background: linear-gradient(45deg, #ff0066, #ff66b3);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
-            <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown('<div class="package-container">', unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="package-box package-start">
-            <div class="package-header">
-                <h3 style="color: #ff66b3;">START</h3>
-                <div class="package-price" style="color: #ff66b3;">R$ 49,90</div>
-                <small>para iniciantes</small>
-            </div>
-            <ul class="package-benefits">
-                <li>10 fotos Inéditas</li>
-                <li>3 vídeo Intimos</li>
-                <li>Fotos Exclusivas</li>
-                <li>Videos Intimos </li>
-                <li>Fotos Buceta</li>
-            </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{checkout_start}" target="_blank" rel="noopener noreferrer" style="
-                    display: block;
-                    background: linear-gradient(45deg, #ff66b3, #ff1493);
-                    color: white;
-                    text-align: center;
-                    padding: 10px;
-                    border-radius: 8px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    transition: all 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" 
-                onmouseout="this.style.transform='scale(1)'"
-                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                    QUERO ESTE PACOTE ➔
-                </a>
-            </div>
-        </div>
-        """.format(checkout_start=Config.CHECKOUT_START), unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="package-box package-premium">
-            <div class="package-badge">POPULAR</div>
-            <div class="package-header">
-                <h3 style="color: #9400d3;">PREMIUM</h3>
-                <div class="package-price" style="color: #9400d3;">R$ 99,90</div>
-                <small>experiência completa</small>
-            </div>
-            <ul class="package-benefits">
-                <li>20 fotos exclusivas</li>
-                <li>5 vídeos premium</li>
-                <li>Fotos Peito</li>
-                <li>Fotos Bunda</li>
-                <li>Fotos Buceta</li>
-                <li>Fotos Exclusivas e Videos Exclusivos</li>
-                <li>Videos Masturbando</li>
-            </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{checkout_premium}" target="_blank" rel="noopener noreferrer" style="
-                    display: block;
-                    background: linear-gradient(45deg, #9400d3, #ff1493);
-                    color: white;
-                    text-align: center;
-                    padding: 10px;
-                    border-radius: 8px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    transition: all 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" 
-                onmouseout="this.style.transform='scale(1)'"
-                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                    QUERO ESTE PACOTE ➔
-                </a>
-            </div>
-        </div>
-        """.format(checkout_premium=Config.CHECKOUT_PREMIUM), unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="package-box package-extreme">
-            <div class="package-header">
-                <h3 style="color: #ff0066;">EXTREME</h3>
-                <div class="package-price" style="color: #ff0066;">R$ 199,90</div>
-                <small>para verdadeiros fãs</small>
-            </div>
-            <ul class="package-benefits">
-                <li>30 fotos ultra-exclusivas</li>
-                <li>10 Videos Exclusivos</li>
-                <li>Fotos Peito</li>
-                <li>Fotos Bunda</li>
-                <li>Fotos Buceta</li>
-                <li>Fotos Exclusivas</li>
-                <li>Videos Masturbando</li>
-                <li>Videos Transando</li>
-                <li>Acesso a conteúdos futuros</li>
-            </ul>
-            <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-                <a href="{checkout_extreme}" target="_blank" rel="noopener noreferrer" style="
-                    display: block;
-                    background: linear-gradient(45deg, #ff0066, #9400d3);
-                    color: white;
-                    text-align: center;
-                    padding: 10px;
-                    border-radius: 8px;
-                    text-decoration: none;
-                    font-weight: bold;
-                    transition: all 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" 
-                onmouseout="this.style.transform='scale(1)'"
-                onclick="this.innerHTML='REDIRECIONANDO ⌛'; this.style.opacity='0.7'">
-                    QUERO ESTE PACOTE ➔
-                </a>
-            </div>
-        </div>
-        """.format(checkout_extreme=Config.CHECKOUT_EXTREME), unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="countdown-container">
-            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
-            <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
-            <p style="margin:5px 0 0;">Termina em breve!</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.components.v1.html("""
-        <script>
-        function updateCountdown() {
-            const countdownElement = parent.document.getElementById('countdown');
-            if (!countdownElement) return;
-            
-            let time = countdownElement.textContent.split(':');
-            let hours = parseInt(time[0]);
-            let minutes = parseInt(time[1]);
-            let seconds = parseInt(time[2]);
-            
-            seconds--;
-            if (seconds < 0) { seconds = 59; minutes--; }
-            if (minutes < 0) { minutes = 59; hours--; }
-            if (hours < 0) { hours = 23; }
-            
-            countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            setTimeout(updateCountdown, 1000);
-        }
-        
-        setTimeout(updateCountdown, 1000);
-        </script>
-        """, height=0)
-
-        plans = [
-            {
-                "name": "1 Mês",
-                "price": "R$ 29,90",
-                "original": "R$ 49,90",
-                "benefits": ["Acesso total", "Conteúdo novo diário", "Chat privado"],
-                "tag": "COMUM",
-                "link": Config.CHECKOUT_VIP_1MES + "?plan=1mes"
-            },
-            {
-                "name": "3 Meses",
-                "price": "R$ 69,90",
-                "original": "R$ 149,70",
-                "benefits": ["25% de desconto", "Bônus: 1 vídeo exclusivo", "Prioridade no chat"],
-                "tag": "MAIS POPULAR",
-                "link": Config.CHECKOUT_VIP_3MESES + "?plan=3meses"
-            },
-            {
-                "name": "1 Ano",
-                "price": "R$ 199,90",
-                "original": "R$ 598,80",
-                "benefits": ["66% de desconto", "Presente surpresa mensal", "Acesso a conteúdos raros"],
-                "tag": "MELHOR CUSTO-BENEFÍCIO",
-                "link": Config.CHECKOUT_VIP_1ANO + "?plan=1ano"
-            }
-        ]
-
-        for plan in plans:
-            with st.container():
-                st.markdown(f"""
-                <div class="offer-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3>{plan['name']}</h3>
-                        {f'<span class="offer-highlight">{plan["tag"]}</span>' if plan["tag"] else ''}
-                    </div>
-                    <div style="margin: 10px 0;">
-                        <span style="font-size: 1.8em; color: #ff66b3; font-weight: bold;">{plan['price']}</span>
-                        <span style="text-decoration: line-through; color: #888; margin-left: 10px;">{plan['original']}</span>
-                    </div>
-                    <ul style="padding-left: 20px;">
-                        {''.join([f'<li style="margin-bottom: 5px;">{benefit}</li>' for benefit in plan['benefits']])}
-                    </ul>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <a href="{plan['link']}" style="
-                            background: linear-gradient(45deg, #ff1493, #9400d3);
-                            color: white;
-                            padding: 10px 20px;
-                            border-radius: 30px;
-                            text-decoration: none;
-                            display: inline-block;
-                            font-weight: bold;
-                        ">
-                            Assinar {plan['name']}
-                        </a>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        if st.button("← Voltar ao chat", key="back_from_offers"):
-            st.session_state.current_page = "chat"
-            st.rerun()
+                return {"text": gemini_response, "button": False}
+                
+        except Exception:
+            return {"text": "Vamos continuar isso mais tarde...", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE (MANTIDO ORIGINAL)
@@ -1271,7 +885,7 @@ class ChatService:
                                         key=f"hist_button_{msg.get('timestamp', '')}",
                                         use_container_width=True
                                     ):
-                                        st.session_state.current_page = content_data.get("button_target", "offers")
+                                        st.session_state.current_page = "offers"  # Garante redirecionamento
                                         save_persistent_data()
                                         st.rerun()
                         else:
@@ -1398,7 +1012,7 @@ class ChatService:
                             key=f"chat_button_{time.time()}",
                             use_container_width=True
                         ):
-                            st.session_state.current_page = resposta.get("button_target", "offers")
+                            st.session_state.current_page = "offers"  # Redirecionamento garantido
                             save_persistent_data()
                             st.rerun()
                 else:
