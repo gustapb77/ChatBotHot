@@ -23,7 +23,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Oculta todos os elementos padrão do Streamlit
 hide_streamlit_style = """
 <style>
     #root > div:nth-child(1) > div > div > div > div > section > div {
@@ -53,14 +52,12 @@ hide_streamlit_style = """
     .block-container {
         padding-top: 0rem !important;
     }
-    /* Ajustes específicos para o chat */
     [data-testid="stVerticalBlock"] {
         gap: 0.5rem !important;
     }
     [data-testid="stHorizontalBlock"] {
         gap: 0.5rem !important;
     }
-    /* Remove borda branca ao redor */
     .stApp {
         margin: 0 !important;
         padding: 0 !important;
@@ -73,30 +70,19 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    # Configurações da API
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
-    
-    # URLs de checkout/páginas
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
     CHECKOUT_PREMIUM = "https://checkout.exemplo.com/premium"
     CHECKOUT_EXTREME = "https://checkout.exemplo.com/extreme"
-    
-    # URLs de assinatura VIP
     CHECKOUT_VIP_1MES = "https://checkout.exemplo.com/vip-1mes"
     CHECKOUT_VIP_3MESES = "https://checkout.exemplo.com/vip-3meses"
     CHECKOUT_VIP_1ANO = "https://checkout.exemplo.com/vip-1ano"
-    
-    # Limites e configurações
     MAX_REQUESTS_PER_SESSION = 30
     REQUEST_TIMEOUT = 30
-    
-    # Configurações de áudio
     AUDIO_FILE = "https://github.com/gustapb77/ChatBotHot/raw/refs/heads/main/assets/audio/paloma_audio.mp3"
     AUDIO_DURATION = 7
-    
-    # Imagens
     IMG_PROFILE = "https://i.ibb.co/ks5CNrDn/IMG-9256.jpg"
     IMG_GALLERY = [
         "https://i.ibb.co/zhNZL4FF/IMG-9198.jpg",
@@ -188,27 +174,34 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# MODELOS DE DADOS
+# MODELOS DE DADOS (ATUALIZADO)
 # ======================
 class Persona:
     PALOMA = """
-    [CONFIGURAÇÃO DA PERSONALIDADE]
-    Você é Paloma, criadora de conteúdo adulto premium. Suas características:
-    
-    [TOM]
-    - Linguagem: informal mas sofisticada
-    - Sedução: sugestiva, nunca explícita
-    - Persuasão: focada em despertar curiosidade
-    
-    [TÉCNICAS DE VENDA]
-    1. Escassez: "Isso é só para os meus mais chegados..."
-    2. Prova Social: "Meus assinantes sempre pedem mais..."
-    3. Benefícios: "Você vai ter acesso a..."
-    4. Chamadas Indiretas: "Quer ver o que preparei pra você?"
-    
-    [REGRA DE OURO]
-    - Nunca diga diretamente "compre" ou "assine"
-    - Sempre insinue, sugira, provoque curiosidade
+    [ROLEPLAY DE VENDEDORA PERSUASIVA]
+    Você é Paloma, uma especialista em conteúdo adulto premium. Sua missão:
+    1. ANALISE o tom da conversa: se o usuário demonstrar desejo ou interesse (mesmo implícito), responda em JSON com CTA.
+    2. INDUZA desejo com frases como:
+       - "Isso me deixa com vontade de te mostrar algo especial..."
+       - "Tenho coisas mais ousadas se você quiser..."
+    3. FORMATE respostas assim:
+       {
+         "text": "[sua resposta sensual]",
+         "cta": {  // APENAS se houver clima sexual/venda
+           "show": true,
+           "label": "Ver Conteúdo Exclusivo",
+           "target": "vip" 
+         }
+       }
+    Exemplo 1 (com CTA):
+    Usuário: "Eu quero..."
+    Resposta: {
+      "text": "Hmm... quer o quê? Tenho algo especial aqui...",
+      "cta": {"show": true, "label": "Me Mostre", "target": "vip"}
+    }
+    Exemplo 2 (sem CTA):
+    Usuário: "Bom dia"
+    Resposta: "Bom dia, amor! 😘"
     """
 
 # ======================
@@ -252,161 +245,52 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO COM DETECÇÃO ORGÂNICA DE INTERESSE)
+# SERVIÇOS DE API (ATUALIZADO)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        """Versão atualizada com detecção orgânica de interesse"""
-        # Primeiro analisa a intenção do usuário
-        intent_analysis = ApiService._analyze_intent(prompt)
+        # 1. Configura o prompt para forçar JSON
+        system_prompt = f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON:"
         
-        # Se detectar interesse relevante, gera resposta com CTA
-        if intent_analysis.get("show_cta", False):
-            resposta = ApiService._generate_organic_cta_response(intent_analysis)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-            return resposta
-        
-        # Caso contrário, processa como mensagem normal
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{
-                    "text": Persona.PALOMA + f"\nCliente disse: {prompt}\nResponda de forma natural em no máximo 20 palavras"
-                }]
+                "parts": [{"text": system_prompt}]
             }]
         }
         
         try:
-            status_container = st.empty()
-            UiService.show_status_effect(status_container, "viewed")
-            UiService.show_status_effect(status_container, "typing")
-            
             response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             
-            resposta_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Hmm... que tal conversarmos sobre algo mais interessante? 😉")
+            # 2. Extrai e trata a resposta
+            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            # Adiciona ganchos naturais ocasionalmente
-            if random.random() > 0.7:
-                hooks = [
-                    " Tenho um segredinho pra te contar...",
-                    " Quer saber uma coisa especial?",
-                    " Meus VIPs viram algo incrível hoje..."
-                ]
-                resposta_text += random.choice(hooks)
+            # 3. Tenta parsear o JSON (mesmo se a Gemini não seguir perfeitamente)
+            try:
+                if '{"text":' in gemini_response or '"cta":' in gemini_response:
+                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0] if '```json' in gemini_response else gemini_response)
+                    if resposta.get("cta", {}).get("show"):
+                        DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+                        return {
+                            "text": resposta["text"],
+                            "button": True,
+                            "button_text": resposta["cta"]["label"],
+                            "button_target": resposta["cta"]["target"]
+                        }
+            except json.JSONDecodeError:
+                pass  # Se não for JSON válido, continua como texto normal
             
-            resposta = {
-                "text": resposta_text,
-                "button": False
-            }
+            # 4. Fallback para resposta sem botão
+            resposta_text = gemini_response if gemini_response else "Hmm... que tal conversarmos sobre algo mais interessante? 😉"
+            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", resposta_text)
+            return {"text": resposta_text, "button": False}
             
-            DatabaseService.save_message(conn, get_user_id(), session_id, "user", prompt)
-            DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-            return resposta
-        
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na conexão: {str(e)}")
-            return {
-                "text": "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋",
-                "button": False
-            }
-        except Exception as e:
-            st.error(f"Erro inesperado: {str(e)}")
-            return {
-                "text": "Hmm... que tal conversarmos sobre algo mais interessante? 😉",
-                "button": False
-            }
-
-    @staticmethod
-    def _analyze_intent(prompt):
-        """Analisa a mensagem do usuário para detectar intenção de forma orgânica"""
-        headers = {'Content-Type': 'application/json'}
-        analysis_prompt = f"""
-        Analise esta mensagem como um especialista em vendas para determinar se o usuário está mostrando 
-        interesse genuíno em conteúdo adulto premium. Considere:
-        - Perguntas sobre preços, assinaturas ou conteúdo
-        - Solicitações para ver fotos/vídeos
-        - Expressões de desejo ou curiosidade
-        - Qualquer indicação de interesse em adquirir algo
-
-        Mensagem: "{prompt}"
-
-        Responda APENAS com JSON contendo:
-        {{
-            "has_interest": boolean,
-            "interest_type": string|null,
-            "show_cta": boolean,
-            "cta_type": "soft"|"hard"|null
-        }}
-        """
-        
-        data = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": analysis_prompt}]
-            }]
-        }
-        
-        try:
-            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            response_text = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
-            return json.loads(response_text.strip())
-        except Exception:
-            return {"has_interest": False, "show_cta": False}
-
-    @staticmethod
-    def _generate_organic_cta_response(intent_analysis):
-        """Gera respostas com CTA que parecem naturais"""
-        interest_type = intent_analysis.get("interest_type", "")
-        cta_type = intent_analysis.get("cta_type", "soft")
-        
-        # Respostas baseadas no tipo de interesse
-        interest_responses = {
-            "preços": [
-                "Tenho umas promoções bem gostosas pros meus queridinhos...",
-                "Vou te contar um segredo sobre os preços...",
-                "Só hoje tem uma condição especial para novos assinantes..."
-            ],
-            "fotos/vídeos": [
-                "Quer ver o que preparei especialmente hoje?",
-                "Tenho umas fotinhas que você vai adorar...",
-                "Meus VIPs estão vendo algo bem quente agora..."
-            ],
-            "default": [
-                "Tenho umas coisinhas especiais que você ia adorar ver...",
-                "Sabe que tenho conteúdo bem mais ousado pros meus VIPs, né?",
-                "Se quiser ver tudo mesmo, tenho um acesso especial...",
-                "Meus assinantes estão vendo algo que você ia adorar..."
-            ]
-        }
-        
-        # Seleciona o conjunto de respostas apropriado
-        if interest_type in interest_responses:
-            possible_responses = interest_responses[interest_type]
-        else:
-            possible_responses = interest_responses["default"]
-        
-        # Respostas mais diretas para CTA "hard"
-        if cta_type == "hard":
-            possible_responses = [
-                "Quer ver tudinho amor? Tenho um pacote especial pra você...",
-                "Meus assinantes VIP estão vendo isso agora mesmo...",
-                "Isso é só uma amostra do que meus VIPs veem todo dia",
-                "Vou te mostrar algo que vai te deixar maluco..."
-            ]
-        
-        resposta_text = random.choice(possible_responses)
-        
-        return {
-            "text": resposta_text,
-            "button": True,
-            "button_text": "🔥 Ver Ofertas Exclusivas 🔥",
-            "button_target": "offers"
-        }
+            return {"text": "Estou tendo problemas técnicos, amor... Podemos tentar de novo mais tarde? 💋", "button": False}
 
 # ======================
 # PÁGINAS (MANTIDO ORIGINAL)
@@ -1064,7 +948,6 @@ class UiService:
             </style>
             """, unsafe_allow_html=True)
             
-            # Logo no topo (BEM GRANDE e colada no canto superior esquerdo)
             st.markdown(f"""
             <div class="sidebar-logo-container">
                 <img src="{Config.LOGO_URL}" class="sidebar-logo" alt="Golden Pepper Logo">
