@@ -256,51 +256,59 @@ class ApiService:
         initial_delay = random.uniform(4, 12)
         time.sleep(initial_delay)
         
-        # Mostra "Visualizado"
+        # Mostra "Visualizado" sem o ícone da Paloma ainda
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
         
-        # Delay antes de "Digitando" (2-5s)
-        time.sleep(random.uniform(2, 5))
+        # Delay reduzido antes de "Digitando" (0.5-1.5s)
+        time.sleep(random.uniform(0.5, 1.5))
         
-        # Mostra "Digitando"
-        UiService.show_status_effect(status_container, "typing")
-        
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
-            }]
-        }
-        
-        try:
-            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        # Agora sim criamos o elemento da mensagem com "Digitando"
+        with st.chat_message("assistant", avatar="💋"):
+            typing_container = st.empty()
+            UiService.show_status_effect(typing_container, "typing")
             
-            # Parseamento seguro do JSON
+            headers = {'Content-Type': 'application/json'}
+            data = {
+                "contents": [{
+                    "role": "user",
+                    "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
+                }]
+            }
+            
             try:
-                if '```json' in gemini_response:
-                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
-                else:
-                    resposta = json.loads(gemini_response)
+                response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
+                response.raise_for_status()
+                gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 
-                if resposta.get("cta", {}).get("show"):
-                    DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-                    return {
-                        "text": resposta["text"],
-                        "button": True,
-                        "button_text": resposta["cta"]["label"],
-                        "button_target": "offers"  # Garante redirecionamento
-                    }
-                return {"text": resposta["text"], "button": False}
-            
-            except json.JSONDecodeError:
-                return {"text": gemini_response, "button": False}
+                # Parseamento seguro do JSON removendo emojis indesejados
+                try:
+                    if '```json' in gemini_response:
+                        resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                    else:
+                        resposta = json.loads(gemini_response)
+                    
+                    # Limpa emojis do texto se necessário
+                    if isinstance(resposta.get("text"), str):
+                        resposta["text"] = re.sub(r'[^\w\s,.;!?]', '', resposta["text"])
+                    
+                    if resposta.get("cta", {}).get("show"):
+                        DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+                        return {
+                            "text": resposta["text"],
+                            "button": True,
+                            "button_text": resposta["cta"]["label"],
+                            "button_target": "offers"
+                        }
+                    return {"text": resposta["text"], "button": False}
                 
-        except Exception:
-            return {"text": "Vamos continuar isso mais tarde...", "button": False}
+                except json.JSONDecodeError:
+                    # Se não for JSON válido, limpa emojis da resposta direta
+                    cleaned_response = re.sub(r'[^\w\s,.;!?]', '', gemini_response)
+                    return {"text": cleaned_response, "button": False}
+                    
+            except Exception:
+                return {"text": "Vamos continuar isso mais tarde...", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -388,7 +396,9 @@ class UiService:
         
         message = status_messages[status_type]
         dots = ""
-        duration = 3.0 if status_type == "viewed" else random.uniform(3, 7)  # Tempo de duração
+        
+        # Tempos ajustados para transição suave
+        duration = 2.0 if status_type == "viewed" else random.uniform(3, 5)
         
         # Mostra o status com dots animados
         start_time = time.time()
