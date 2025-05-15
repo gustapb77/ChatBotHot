@@ -247,71 +247,88 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# FUNÇÃO AUXILIAR PARA REMOVER EMOJIS
+# ======================
+def remove_emojis(text):
+    emoji_pattern = re.compile("["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+        u"\U00002702-\U000027B0"
+        u"\U000024C2-\U0001F251"
+        "]+", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', text)
+
+# ======================
+# SERVIÇOS DE API (ATUALIZADO)
 # ======================
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # Delay inicial (4-12s) antes de mostrar "Visualizado"
-        initial_delay = random.uniform(4, 12)
+        # Container vazio que será usado para todo o status
+        status_container = st.empty()
+        
+        # Delay inicial (4-8s) - reduzido para menos tempo morto
+        initial_delay = random.uniform(4, 8)
         time.sleep(initial_delay)
         
-        # Mostra "Visualizado" sem o ícone da Paloma ainda
-        status_container = st.empty()
-        UiService.show_status_effect(status_container, "viewed")
+        # Mostra "Visualizado" junto com o ícone
+        with status_container:
+            with st.chat_message("assistant", avatar="💋"):
+                UiService.show_status_effect(st.empty(), "viewed")
         
-        # Delay reduzido antes de "Digitando" (0.5-1.5s)
-        time.sleep(random.uniform(0.5, 1.5))
+        # Transição imediata para "Digitando"
+        typing_delay = random.uniform(0.5, 1.5)
+        time.sleep(typing_delay)
         
-        # Agora sim criamos o elemento da mensagem com "Digitando"
-        with st.chat_message("assistant", avatar="💋"):
-            typing_container = st.empty()
-            UiService.show_status_effect(typing_container, "typing")
+        # Mostra "Digitando" no mesmo container
+        with status_container:
+            with st.chat_message("assistant", avatar="💋"):
+                UiService.show_status_effect(st.empty(), "typing")
+        
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            "contents": [{
+                "role": "user",
+                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON SEM EMOJIS"}]
+            }]
+        }
+        
+        try:
+            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            headers = {'Content-Type': 'application/json'}
-            data = {
-                "contents": [{
-                    "role": "user",
-                    "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
-                }]
-            }
-            
+            # Parse do JSON e remoção de emojis
             try:
-                response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
-                response.raise_for_status()
-                gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if '```json' in gemini_response:
+                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                else:
+                    resposta = json.loads(gemini_response)
                 
-                # Parseamento seguro do JSON removendo emojis indesejados
-                try:
-                    if '```json' in gemini_response:
-                        resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
-                    else:
-                        resposta = json.loads(gemini_response)
-                    
-                    # Limpa emojis do texto se necessário
-                    if isinstance(resposta.get("text"), str):
-                        resposta["text"] = re.sub(r'[^\w\s,.;!?]', '', resposta["text"])
-                    
-                    if resposta.get("cta", {}).get("show"):
-                        DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-                        return {
-                            "text": resposta["text"],
-                            "button": True,
-                            "button_text": resposta["cta"]["label"],
-                            "button_target": "offers"
-                        }
-                    return {"text": resposta["text"], "button": False}
+                # Remove emojis do texto
+                if "text" in resposta:
+                    resposta["text"] = remove_emojis(resposta["text"])
                 
-                except json.JSONDecodeError:
-                    # Se não for JSON válido, limpa emojis da resposta direta
-                    cleaned_response = re.sub(r'[^\w\s,.;!?]', '', gemini_response)
-                    return {"text": cleaned_response, "button": False}
-                    
-            except Exception:
-                return {"text": "Vamos continuar isso mais tarde...", "button": False}
+                if resposta.get("cta", {}).get("show"):
+                    DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
+                    return {
+                        "text": resposta["text"],
+                        "button": True,
+                        "button_text": remove_emojis(resposta["cta"]["label"]),
+                        "button_target": "offers"
+                    }
+                return {"text": resposta["text"], "button": False}
+            
+            except json.JSONDecodeError:
+                return {"text": remove_emojis(gemini_response), "button": False}
+                
+        except Exception:
+            return {"text": "Vamos continuar isso mais tarde", "button": False}
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (ATUALIZADO)
 # ======================
 class UiService:
     @staticmethod
@@ -388,7 +405,6 @@ class UiService:
 
     @staticmethod
     def show_status_effect(container, status_type):
-        # Define mensagens fixas (sem variação aleatória)
         status_messages = {
             "viewed": "Visualizado",  
             "typing": "Digitando"  
@@ -397,16 +413,15 @@ class UiService:
         message = status_messages[status_type]
         dots = ""
         
-        # Tempos ajustados para transição suave
+        # Tempos ajustados
         duration = 2.0 if status_type == "viewed" else random.uniform(3, 5)
         
-        # Mostra o status com dots animados
         start_time = time.time()
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
             
             if status_type == "typing":
-                dots = "." * (int(elapsed * 2) % 4)  # Anima os pontos ("Digitando...")
+                dots = "." * (int(elapsed * 2) % 4)
             
             container.markdown(f"""
             <div style="
@@ -425,8 +440,6 @@ class UiService:
             """, unsafe_allow_html=True)
             
             time.sleep(0.3)
-        
-        container.empty()
 
     @staticmethod
     def show_audio_recording_effect(container):
@@ -826,7 +839,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS (ATUALIZADO COM SUAS PÁGINAS PRONTAS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -880,7 +893,6 @@ class NewPages:
 
         st.markdown("---")
         
-        # Botão de Iniciar Conversa Privada (mantido do código original)
         if st.button("💬 Iniciar Conversa Privada", 
                     use_container_width=True,
                     type="primary"):
@@ -1211,7 +1223,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
@@ -1348,7 +1360,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje?", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1356,14 +1368,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "amor... Vou ficar ocupada agora, me manda mensagem depois? "
+                    "content": "Vou ficar ocupada agora, me manda mensagem depois?"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1399,6 +1411,7 @@ class ChatService:
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
                 
                 if isinstance(resposta, dict):
+                    text = remove_emojis(resposta.get("text", ""))
                     st.markdown(f"""
                     <div style="
                         background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1407,13 +1420,13 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {resposta.get("text", "")}
+                        {text}
                     </div>
                     """, unsafe_allow_html=True)
                     
                     if resposta.get("button", False):
                         if st.button(
-                            resposta.get("button_text", "Ver Ofertas"),
+                            remove_emojis(resposta.get("button_text", "Ver Ofertas")),
                             key=f"chat_button_{time.time()}",
                             use_container_width=True
                         ):
@@ -1429,7 +1442,7 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {resposta}
+                        {remove_emojis(resposta)}
                     </div>
                     """, unsafe_allow_html=True)
             
