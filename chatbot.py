@@ -252,9 +252,18 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # Mostra status "visualizando/digitando"
+        # Delay inicial (4-12s) antes de mostrar "Visualizado"
+        initial_delay = random.uniform(4, 12)
+        time.sleep(initial_delay)
+        
+        # Mostra "Visualizado"
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
+        
+        # Delay antes de "Digitando" (2-5s)
+        time.sleep(random.uniform(2, 5))
+        
+        # Mostra "Digitando"
         UiService.show_status_effect(status_container, "typing")
         
         headers = {'Content-Type': 'application/json'}
@@ -371,21 +380,23 @@ class UiService:
 
     @staticmethod
     def show_status_effect(container, status_type):
+        # Define mensagens fixas (sem variação aleatória)
         status_messages = {
-            "viewed": ["Visualizado", "Mensagem recebida", "Recebido"],
-            "typing": ["Digitando", "Respondendo", "Escrevendo"]
+            "viewed": "Visualizado",  
+            "typing": "Digitando"  
         }
         
-        message = random.choice(status_messages[status_type])
+        message = status_messages[status_type]
         dots = ""
-        start_time = time.time()
-        duration = 2.5 if status_type == "viewed" else random.uniform(3, 7)
+        duration = 3.0 if status_type == "viewed" else random.uniform(3, 7)  # Tempo de duração
         
+        # Mostra o status com dots animados
+        start_time = time.time()
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
             
             if status_type == "typing":
-                dots = "." * (int(elapsed * 2) % 4)
+                dots = "." * (int(elapsed * 2) % 4)  # Anima os pontos ("Digitando...")
             
             container.markdown(f"""
             <div style="
@@ -558,7 +569,6 @@ class UiService:
                 .sidebar-logo-container {
                     position: relative;
                     z-index: 1;
-                }
             </style>
             """, unsafe_allow_html=True)
             
@@ -1260,7 +1270,7 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {content_data.get("text", "")} {random.choice(["💋", "🔥", "😈"])}
+                                    {content_data.get("text", "")}
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -1283,7 +1293,7 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {msg["content"]} {random.choice(["💋", "🔥", "😈"])}
+                                    {msg["content"]}
                                 </div>
                                 """, unsafe_allow_html=True)
                     except json.JSONDecodeError:
@@ -1296,7 +1306,7 @@ class ChatService:
                                 border-radius: 18px 18px 18px 0;
                                 margin: 5px 0;
                             ">
-                                {msg["content"]} {random.choice(["💋", "🔥", "😈"])}
+                                {msg["content"]}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -1387,7 +1397,7 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {resposta.get("text", "")} {random.choice(["💋", "🔥", "😈"])}
+                        {resposta.get("text", "")}
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1409,7 +1419,7 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {resposta} {random.choice(["💋", "🔥", "😈"])}
+                        {resposta}
                     </div>
                     """, unsafe_allow_html=True)
             
