@@ -203,7 +203,7 @@ class Persona:
     ```
     Exemplo 2 (sem CTA):
     Usuário: "bom dia"
-    Resposta: "Bom dia, amor! 😘"
+    Resposta: "Bom dia, amor!"
     """
 
 # ======================
@@ -252,16 +252,10 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # Delay inicial (4-12s) antes de mostrar "Visualizado"
-        initial_delay = random.uniform(4, 12)
-        time.sleep(initial_delay)
-        
-        # Mostra "Visualizado"
+        # Mostra status "visualizando/digitando"
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
-        
-        # Delay antes de "Digitando" (2-5s)
-        time.sleep(random.uniform(2, 5))
+        UiService.show_status_effect(status_container, "typing")
         
         headers = {'Content-Type': 'application/json'}
         data = {
@@ -283,8 +277,9 @@ class ApiService:
                 else:
                     resposta = json.loads(gemini_response)
                 
-                # REMOVER EMOJIS
-                resposta["text"] = re.sub(r'[^\w\s,.!?;:]', '', resposta["text"])
+                # REMOÇÃO DE EMOJIS
+                if isinstance(resposta.get("text"), str):
+                    resposta["text"] = re.sub(r'[^\w\s,.!?;:]', '', resposta["text"])
                 
                 if resposta.get("cta", {}).get("show"):
                     DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
@@ -292,17 +287,17 @@ class ApiService:
                         "text": resposta["text"],
                         "button": True,
                         "button_text": resposta["cta"]["label"],
-                        "button_target": "offers"
+                        "button_target": "offers"  # Garante redirecionamento
                     }
                 return {"text": resposta["text"], "button": False}
             
             except json.JSONDecodeError:
-                # REMOVER EMOJIS
+                # REMOÇÃO DE EMOJIS MESMO SE NÃO FOR JSON
                 clean_response = re.sub(r'[^\w\s,.!?;:]', '', gemini_response)
                 return {"text": clean_response, "button": False}
                 
         except Exception:
-            return {"text": "Vamos continuar isso mais tarde", "button": False}
+            return {"text": "Vamos continuar isso mais tarde...", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -382,16 +377,17 @@ class UiService:
 
     @staticmethod
     def show_status_effect(container, status_type):
+        # MENSAGENS FIXAS SEM VARIAÇÃO
         status_messages = {
-            "viewed": "Visualizado",  
-            "typing": "Digitando"  
+            "viewed": "Visualizado",
+            "typing": "Respondendo"
         }
         
         message = status_messages[status_type]
         dots = ""
-        duration = 3.0 if status_type == "viewed" else random.uniform(3, 7)
-        
         start_time = time.time()
+        duration = 2.5 if status_type == "viewed" else 4.0  # Tempo fixo
+        
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
             
@@ -416,7 +412,7 @@ class UiService:
             
             time.sleep(0.3)
         
-        return container
+        container.empty()
 
     @staticmethod
     def show_audio_recording_effect(container):
@@ -569,6 +565,7 @@ class UiService:
                 .sidebar-logo-container {
                     position: relative;
                     z-index: 1;
+                }
             </style>
             """, unsafe_allow_html=True)
             
@@ -870,6 +867,7 @@ class NewPages:
 
         st.markdown("---")
         
+        # Botão de Iniciar Conversa Privada (mantido do código original)
         if st.button("💬 Iniciar Conversa Privada", 
                     use_container_width=True,
                     type="primary"):
@@ -1261,6 +1259,8 @@ class ChatService:
                         content_data = json.loads(msg["content"])
                         if isinstance(content_data, dict):
                             with st.chat_message("assistant", avatar="💋"):
+                                # REMOÇÃO DE EMOJIS
+                                clean_text = re.sub(r'[^\w\s,.!?;:]', '', content_data.get("text", ""))
                                 st.markdown(f"""
                                 <div style="
                                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1269,7 +1269,7 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {content_data.get("text", "")}
+                                    {clean_text}
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -1284,6 +1284,7 @@ class ChatService:
                                         st.rerun()
                         else:
                             with st.chat_message("assistant", avatar="💋"):
+                                clean_text = re.sub(r'[^\w\s,.!?;:]', '', msg["content"])
                                 st.markdown(f"""
                                 <div style="
                                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1292,11 +1293,12 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {msg["content"]}
+                                    {clean_text}
                                 </div>
                                 """, unsafe_allow_html=True)
                     except json.JSONDecodeError:
                         with st.chat_message("assistant", avatar="💋"):
+                            clean_text = re.sub(r'[^\w\s,.!?;:]', '', msg["content"])
                             st.markdown(f"""
                             <div style="
                                 background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1305,7 +1307,7 @@ class ChatService:
                                 border-radius: 18px 18px 18px 0;
                                 margin: 5px 0;
                             ">
-                                {msg["content"]}
+                                {clean_text}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -1337,7 +1339,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje?", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1352,7 +1354,7 @@ class ChatService:
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, vamos continuar mais tarde"
+                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde?"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1384,56 +1386,46 @@ class ChatService:
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Container único para a resposta
-            message_container = st.empty()
-            with message_container.container():
-                with st.chat_message("assistant", avatar="💋"):
-                    status_container = st.empty()
+            with st.chat_message("assistant", avatar="💋"):
+                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                
+                if isinstance(resposta, dict):
+                    # REMOÇÃO DE EMOJIS
+                    clean_text = re.sub(r'[^\w\s,.!?;:]', '', resposta.get("text", ""))
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {clean_text}
+                    </div>
+                    """, unsafe_allow_html=True)
                     
-                    # Mostra "Visualizado" e depois "Digitando" no mesmo container
-                    UiService.show_status_effect(status_container, "viewed")
-                    typing_container = UiService.show_status_effect(status_container, "typing")
-                    
-                    # Obtém a resposta
-                    resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                    
-                    # Limpa o status e mostra a resposta
-                    typing_container.empty()
-                    
-                    if isinstance(resposta, dict):
-                        st.markdown(f"""
-                        <div style="
-                            background: linear-gradient(45deg, #ff66b3, #ff1493);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 18px 18px 18px 0;
-                            margin: 5px 0;
-                        ">
-                            {resposta.get("text", "")}
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if resposta.get("button", False):
-                            if st.button(
-                                resposta.get("button_text", "Ver Ofertas"),
-                                key=f"chat_button_{time.time()}",
-                                use_container_width=True
-                            ):
-                                st.session_state.current_page = resposta.get("button_target", "offers")
-                                save_persistent_data()
-                                st.rerun()
-                    else:
-                        st.markdown(f"""
-                        <div style="
-                            background: linear-gradient(45deg, #ff66b3, #ff1493);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 18px 18px 18px 0;
-                            margin: 5px 0;
-                        ">
-                            {resposta}
-                        </div>
-                        """, unsafe_allow_html=True)
+                    if resposta.get("button", False):
+                        if st.button(
+                            resposta.get("button_text", "Ver Ofertas"),
+                            key=f"chat_button_{time.time()}",
+                            use_container_width=True
+                        ):
+                            st.session_state.current_page = resposta.get("button_target", "offers")
+                            save_persistent_data()
+                            st.rerun()
+                else:
+                    clean_text = re.sub(r'[^\w\s,.!?;:]', '', resposta)
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {clean_text}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
