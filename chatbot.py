@@ -345,37 +345,53 @@ class ApiService:
         if CTAEngine.should_show_cta(st.session_state.messages):
             return CTAEngine.generate_response(prompt)
         
-        headers = {'Content-Type': 'application/json'}
+        # Pega o histórico formatado (últimas 10 mensagens)
+        chat_history = []
+        for msg in st.session_state.messages[-10:]:
+            if msg["content"] == "[ÁUDIO]":
+                continue  # Ignora áudios
+            
+            # Formata no padrão Gemini
+            chat_history.append({
+                "role": "user" if msg["role"] == "user" else "model",
+                "parts": [{"text": msg["content"]}]
+            })
+        
+        # Monta o payload com Persona + Histórico + Prompt
         data = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
-            }]
+            "contents": [
+                {
+                    "role": "system",
+                    "parts": [{"text": Persona.PALOMA}]
+                },
+                *chat_history,
+                {
+                    "role": "user",
+                    "parts": [{"text": prompt}]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.7,  # Mantém respostas consistentes
+                "maxOutputTokens": 100  # Frases curtas
+            }
         }
         
         try:
-            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
+            response = requests.post(Config.API_URL, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
-            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            gemini_response = response.json()["candidates"][0]["content"]["parts"][0]["text"]
             
+            # Parseia o JSON ou retorna texto puro (sem modificações)
             try:
-                if '```json' in gemini_response:
-                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
-                else:
-                    resposta = json.loads(gemini_response)
-                
-                # Garante que o CTA só apareça se o contexto permitir
-                if resposta.get("cta", {}).get("show"):
-                    if not CTAEngine.should_show_cta(st.session_state.messages):
-                        resposta["cta"]["show"] = False
-                
+                resposta = json.loads(gemini_response)
+                # Garante que o estilo da Paloma seja mantido (frases curtas)
+                resposta["text"] = resposta["text"].split(".")[0].strip()  # Pega só a primeira frase
                 return resposta
-            
-            except json.JSONDecodeError:
-                return {"text": gemini_response, "button": False}
+            except:
+                return {"text": gemini_response.split(".")[0], "cta": {"show": False}}
                 
         except Exception:
-            return {"text": "Vamos continuar isso mais tarde...", "button": False}
+            return {"text": "to ocupada agora", "cta": {"show": False}}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -457,7 +473,7 @@ class UiService:
     def show_status_effect(container, status_type):
         status_messages = {
             "viewed": "Visualizado",
-            "typing": "Digitando"  # Alterado para "Digitando" conforme solicitado
+            "typing": "Digitando"
         }
         
         message = status_messages[status_type]
@@ -1347,13 +1363,13 @@ class ChatService:
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                if content_data.get("button", False):
+                                if content_data.get("cta", {}).get("show"):
                                     if st.button(
-                                        content_data.get("button_text", "Ver Ofertas"),
+                                        content_data.get("cta", {}).get("label", "Ver Ofertas"),
                                         key=f"hist_button_{msg.get('timestamp', '')}",
                                         use_container_width=True
                                     ):
-                                        st.session_state.current_page = content_data.get("button_target", "offers")
+                                        st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
                                         save_persistent_data()
                                         st.rerun()
                         else:
@@ -1474,13 +1490,13 @@ class ChatService:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    if resposta.get("button", False):
+                    if resposta.get("cta", {}).get("show"):
                         if st.button(
-                            resposta.get("button_text", "Ver Ofertas"),
+                            resposta.get("cta", {}).get("label", "Ver Ofertas"),
                             key=f"chat_button_{time.time()}",
                             use_container_width=True
                         ):
-                            st.session_state.current_page = resposta.get("button_target", "offers")
+                            st.session_state.current_page = resposta.get("cta", {}).get("target", "offers")
                             save_persistent_data()
                             st.rerun()
                 else:
