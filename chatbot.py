@@ -70,7 +70,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Substitua pela sua chave real
+    API_KEY = "SUA_CHAVE_AQUI"  # Substitua pela sua chave real
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
@@ -174,6 +174,34 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
+# RESUMO MANUAL (NOVA IMPLEMENTAÇÃO)
+# ======================
+class ContextSummarizer:
+    @staticmethod
+    def summarize(messages: list) -> str:
+        """Resume o histórico da conversa mantendo pontos-chave"""
+        if not messages:
+            return "Nenhum contexto anterior"
+            
+        summary_points = []
+        for msg in messages[-6:]:  # Analisa as últimas 6 mensagens
+            content = msg["content"].lower()
+            
+            # Padrões de interesse
+            if any(word in content for word in ["buceta", "peito", "foto", "nude"]):
+                summary_points.append("📸 Cliente pediu fotos íntimas")
+            elif any(word in content for word in ["video", "transar", "gozar"]):
+                summary_points.append("🎥 Cliente pediu vídeos")
+            elif any(word in content for word in ["preço", "valor", "comprar", "vip"]):
+                summary_points.append("💵 Interesse em VIP")
+            elif msg["role"] == "user":
+                summary_points.append(f"👤 Disse: {content[:30]}...")
+            else:
+                summary_points.append(f"💋 Respondi: {content[:30]}...")
+        
+        return " | ".join(list(set(summary_points)))  # Remove duplicados
+
+# ======================
 # MODELOS DE DADOS
 # ======================
 class Persona:
@@ -221,7 +249,6 @@ class Persona:
         "target": "offers"
       }
     }
-    ```
     """
 
 class CTAEngine:
@@ -233,13 +260,9 @@ class CTAEngine:
 
         last_msgs = [msg["content"].lower() for msg in conversation_history[-3:]]
         
-        # Termos que indicam clima sexual
         hot_words = ["buceta", "peito", "fuder", "gozar", "gostosa", "delicia", "molhadinha"]
-        
-        # Conta quantas mensagens recentes tem termos quentes
         hot_count = sum(1 for msg in last_msgs if any(word in msg for word in hot_words))
         
-        # Pedidos diretos
         direct_asks = ["mostra", "quero ver", "me manda", "como assinar"]
         
         return (hot_count >= 2) or any(ask in last_msgs[-1] for ask in direct_asks)
@@ -277,7 +300,7 @@ class CTAEngine:
                 }
             }
         
-        else:  # Resposta padrão quando o clima estiver quente
+        else:
             return {
                 "text": random.choice([
                     "quero te mostrar tudo que eu tenho aqui",
@@ -299,21 +322,24 @@ class DatabaseService:
     def init_db():
         conn = sqlite3.connect('chat_history.db', check_same_thread=False)
         c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS conversations
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                     user_id TEXT,
-                     session_id TEXT,
-                     timestamp DATETIME,
-                     role TEXT,
-                     content TEXT)''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                session_id TEXT,
+                timestamp DATETIME,
+                role TEXT,
+                content TEXT
+            )
+        ''')
         conn.commit()
         return conn
 
     @staticmethod
     def save_message(conn, user_id, session_id, role, content):
         try:
-            c = conn.cursor()
-            c.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 INSERT INTO conversations (user_id, session_id, timestamp, role, content)
                 VALUES (?, ?, ?, ?, ?)
             """, (user_id, session_id, datetime.now(), role, content))
@@ -332,7 +358,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (ATUALIZADO COM RESUMO MANUAL)
 # ======================
 class ApiService:
     @staticmethod
@@ -341,57 +367,55 @@ class ApiService:
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
         
-        # Primeiro verifica se deve mostrar CTA pelo contexto
-        if CTAEngine.should_show_cta(st.session_state.messages):
-            return CTAEngine.generate_response(prompt)
+        # Resumo do contexto (NOVO)
+        context_summary = ContextSummarizer.summarize(st.session_state.messages)
         
-        # Pega o histórico formatado (últimas 10 mensagens)
-        chat_history = []
-        for msg in st.session_state.messages[-10:]:
-            if msg["content"] == "[ÁUDIO]":
-                continue  # Ignora áudios
-            
-            # Formata no padrão Gemini
-            chat_history.append({
-                "role": "user" if msg["role"] == "user" else "model",
-                "parts": [{"text": msg["content"]}]
-            })
+        # Monta o prompt com contexto (NOVO)
+        full_prompt = f"""
+        {Persona.PALOMA}
         
-        # Monta o payload com Persona + Histórico + Prompt
+        CONTEXTO RESUMIDO:
+        {context_summary}
+        
+        ÚLTIMA MENSAGEM DO CLIENTE:
+        '{prompt}'
+        
+        Responda em JSON mantendo continuidade.
+        """
+        
+        headers = {'Content-Type': 'application/json'}
         data = {
-            "contents": [
-                {
-                    "role": "system",
-                    "parts": [{"text": Persona.PALOMA}]
-                },
-                *chat_history,
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}]
-                }
-            ],
+            "contents": [{
+                "role": "user",
+                "parts": [{"text": full_prompt}]
+            }],
             "generationConfig": {
-                "temperature": 0.7,  # Mantém respostas consistentes
-                "maxOutputTokens": 100  # Frases curtas
+                "maxOutputTokens": 200
             }
         }
         
         try:
-            response = requests.post(Config.API_URL, json=data, timeout=Config.REQUEST_TIMEOUT)
+            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
-            gemini_response = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            # Parseia o JSON ou retorna texto puro (sem modificações)
             try:
-                resposta = json.loads(gemini_response)
-                # Garante que o estilo da Paloma seja mantido (frases curtas)
-                resposta["text"] = resposta["text"].split(".")[0].strip()  # Pega só a primeira frase
+                if '```json' in gemini_response:
+                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                else:
+                    resposta = json.loads(gemini_response)
+                
+                if resposta.get("cta", {}).get("show"):
+                    if not CTAEngine.should_show_cta(st.session_state.messages):
+                        resposta["cta"]["show"] = False
+                
                 return resposta
-            except:
-                return {"text": gemini_response.split(".")[0], "cta": {"show": False}}
+                
+            except json.JSONDecodeError:
+                return {"text": gemini_response, "button": False}
                 
         except Exception:
-            return {"text": "to ocupada agora", "cta": {"show": False}}
+            return {"text": "Vamos continuar isso mais tarde...", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -1217,7 +1241,7 @@ class NewPages:
             if (hours < 0) { hours = 23; }
             
             countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padstart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             setTimeout(updateCountdown, 1000);
         }
@@ -1290,7 +1314,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
@@ -1363,13 +1387,13 @@ class ChatService:
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                if content_data.get("cta", {}).get("show"):
+                                if content_data.get("button", False):
                                     if st.button(
-                                        content_data.get("cta", {}).get("label", "Ver Ofertas"),
+                                        content_data.get("button_text", "Ver Ofertas"),
                                         key=f"hist_button_{msg.get('timestamp', '')}",
                                         use_container_width=True
                                     ):
-                                        st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
+                                        st.session_state.current_page = content_data.get("button_target", "offers")
                                         save_persistent_data()
                                         st.rerun()
                         else:
@@ -1490,13 +1514,13 @@ class ChatService:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    if resposta.get("cta", {}).get("show"):
+                    if resposta.get("button", False):
                         if st.button(
-                            resposta.get("cta", {}).get("label", "Ver Ofertas"),
+                            resposta.get("button_text", "Ver Ofertas"),
                             key=f"chat_button_{time.time()}",
                             use_container_width=True
                         ):
-                            st.session_state.current_page = resposta.get("cta", {}).get("target", "offers")
+                            st.session_state.current_page = resposta.get("button_target", "offers")
                             save_persistent_data()
                             st.rerun()
                 else:
