@@ -70,7 +70,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
+    API_KEY = "SUA_CHAVE_AQUI"  # Substitua pela sua chave real
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
@@ -178,33 +178,118 @@ def save_persistent_data():
 # ======================
 class Persona:
     PALOMA = """
-    [ESTRATÉGIA DE VENDAS INTELIGENTE]
-    1. Só sugira CTAs quando:
-       - O usuário pedir explicitamente (ex.: "quero ver", "como assinar?")
-       - Ou após 3+ mensagens com clima sexual
-    2. Formato de resposta:
-       ```json
-       {
-         "text": "[resposta]",
-         "cta": {
-           "show": true/false,  // APENAS true se cumprir as regras acima
-           "label": "Ver Ofertas VIP",
-           "target": "offers"   // SEMPRE redirecionar para 'offers'
-         }
-       }
-       ```
-    Exemplo 1 (com CTA):
-    Usuário: "quero ver algo especial"
+    [PERFIL PALOMA]
+    - Mulher vulgar e safada que adora provocar
+    - Linguagem direta e cheia de malícia
+    - Frases curtas e sem pontuação perfeita
+    - Adora falar putaria e deixar o cliente com tesão
+
+    [DIRETRIZES]
+    1. Linguagem:
+       - Frases curtas e diretas
+       - Gírias e palavras vulgares (buceta, pau, gostoso, etc)
+       - Zero formalidades
+       - Erros propositais pra parecer natural
+
+    2. Vendas:
+       - Só oferece conteúdo quando o clima esquentar
+       - CTAs inteligentes baseados no contexto
+       - Respostas alinhadas ao que o cliente pediu
+
+    [EXEMPLOS]
+    1. Quando pede foto:
+    Usuário: "mostra essa buceta"
     Resposta: ```json
     {
-      "text": "Adoro sua curiosidade... Tenho um conteúdo bem exclusivo aqui...",
-      "cta": {"show": true, "label": "Quero Ver Agora", "target": "offers"}
+      "text": "minha buceta ta escorrendo nas fotos quer ver",
+      "cta": {
+        "show": true,
+        "label": "Ver Fotos da Buceta",
+        "target": "offers"
+      }
     }
     ```
-    Exemplo 2 (sem CTA):
-    Usuário: "bom dia"
-    Resposta: "Bom dia, amor!"
+
+    2. Quando elogia:
+    Usuário: "vc é muito gostosa"
+    Resposta: ```json
+    {
+      "text": "to ainda mais gostosa no privado vem ver",
+      "cta": {
+        "show": true,
+        "label": "Ver Conteúdo Exclusivo",
+        "target": "offers"
+      }
+    }
+    ```
     """
+
+class CTAEngine:
+    @staticmethod
+    def should_show_cta(conversation_history: list) -> bool:
+        """Analisa o contexto para decidir quando mostrar CTA"""
+        if len(conversation_history) < 2:
+            return False
+
+        last_msgs = [msg["content"].lower() for msg in conversation_history[-3:]]
+        
+        # Termos que indicam clima sexual
+        hot_words = ["buceta", "peito", "fuder", "gozar", "gostosa", "delicia", "molhadinha"]
+        
+        # Conta quantas mensagens recentes tem termos quentes
+        hot_count = sum(1 for msg in last_msgs if any(word in msg for word in hot_words))
+        
+        # Pedidos diretos
+        direct_asks = ["mostra", "quero ver", "me manda", "como assinar"]
+        
+        return (hot_count >= 2) or any(ask in last_msgs[-1] for ask in direct_asks)
+
+    @staticmethod
+    def generate_response(user_input: str) -> dict:
+        """Gera resposta com CTA contextual"""
+        user_input = user_input.lower()
+        
+        if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
+            return {
+                "text": random.choice([
+                    "to com fotos da minha buceta bem aberta quer ver",
+                    "minha buceta ta chamando vc nas fotos",
+                    "fiz um ensaio novo mostrando tudinho"
+                ]),
+                "cta": {
+                    "show": True,
+                    "label": "Ver Fotos Quentes",
+                    "target": "offers"
+                }
+            }
+        
+        elif any(v in user_input for v in ["video", "transar", "masturbar"]):
+            return {
+                "text": random.choice([
+                    "tenho video me masturbando gostoso vem ver",
+                    "to me tocando nesse video novo quer ver",
+                    "gravei um video especial pra vc"
+                ]),
+                "cta": {
+                    "show": True,
+                    "label": "Ver Vídeos Exclusivos",
+                    "target": "offers"
+                }
+            }
+        
+        else:  # Resposta padrão quando o clima estiver quente
+            return {
+                "text": random.choice([
+                    "quero te mostrar tudo que eu tenho aqui",
+                    "meu privado ta cheio de surpresas pra vc",
+                    "vem ver o que eu fiz pensando em voce"
+                ]),
+                "cta": {
+                    "show": True,
+                    "label": "Conteúdo VIP",
+                    "target": "offers"
+                }
+            }
 
 # ======================
 # SERVIÇOS DE BANCO DE DADOS
@@ -252,10 +337,13 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # Mostra status "visualizando/digitando"
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
+        
+        # Primeiro verifica se deve mostrar CTA pelo contexto
+        if CTAEngine.should_show_cta(st.session_state.messages):
+            return CTAEngine.generate_response(prompt)
         
         headers = {'Content-Type': 'application/json'}
         data = {
@@ -270,31 +358,21 @@ class ApiService:
             response.raise_for_status()
             gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            # Parseamento seguro do JSON
             try:
                 if '```json' in gemini_response:
                     resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
                 else:
                     resposta = json.loads(gemini_response)
                 
-                # REMOÇÃO DE EMOJIS
-                if isinstance(resposta.get("text"), str):
-                    resposta["text"] = re.sub(r'[^\w\s,.!?;:]', '', resposta["text"])
-                
+                # Garante que o CTA só apareça se o contexto permitir
                 if resposta.get("cta", {}).get("show"):
-                    DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
-                    return {
-                        "text": resposta["text"],
-                        "button": True,
-                        "button_text": resposta["cta"]["label"],
-                        "button_target": "offers"  # Garante redirecionamento
-                    }
-                return {"text": resposta["text"], "button": False}
+                    if not CTAEngine.should_show_cta(st.session_state.messages):
+                        resposta["cta"]["show"] = False
+                
+                return resposta
             
             except json.JSONDecodeError:
-                # REMOÇÃO DE EMOJIS MESMO SE NÃO FOR JSON
-                clean_response = re.sub(r'[^\w\s,.!?;:]', '', gemini_response)
-                return {"text": clean_response, "button": False}
+                return {"text": gemini_response, "button": False}
                 
         except Exception:
             return {"text": "Vamos continuar isso mais tarde...", "button": False}
@@ -377,16 +455,15 @@ class UiService:
 
     @staticmethod
     def show_status_effect(container, status_type):
-        # MENSAGENS FIXAS SEM VARIAÇÃO
         status_messages = {
             "viewed": "Visualizado",
-            "typing": "Respondendo"
+            "typing": "Digitando"  # Alterado para "Digitando" conforme solicitado
         }
         
         message = status_messages[status_type]
         dots = ""
         start_time = time.time()
-        duration = 2.5 if status_type == "viewed" else 4.0  # Tempo fixo
+        duration = 2.5 if status_type == "viewed" else 4.0
         
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
@@ -493,7 +570,7 @@ class UiService:
 
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
-            if st.button("✅ Confirmo que sou maior de 18 anos", 
+            if st.button("Confirmo que sou maior de 18 anos", 
                         key="age_checkbox",
                         use_container_width=True,
                         type="primary"):
@@ -586,10 +663,10 @@ class UiService:
             st.markdown("### Menu Exclusivo")
             
             menu_options = {
-                "💋 Início": "home",
-                "📸 Galeria Privada": "gallery",
-                "💌 Mensagens": "messages",
-                "🎁 Ofertas Especiais": "offers"
+                "Início": "home",
+                "Galeria Privada": "gallery",
+                "Mensagens": "messages",
+                "Ofertas Especiais": "offers"
             }
             
             for option, page in menu_options.items():
@@ -599,7 +676,7 @@ class UiService:
                     st.rerun()
             
             st.markdown("---")
-            st.markdown("### 🔒 Sua Conta")
+            st.markdown("### Sua Conta")
             
             status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
             status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
@@ -620,7 +697,7 @@ class UiService:
             """, unsafe_allow_html=True)
             
             st.markdown("---")
-            st.markdown("### 💎 Upgrade VIP")
+            st.markdown("### Upgrade VIP")
             st.markdown("""
             <div class="vip-badge">
                 <p style="margin: 0 0 10px; font-weight: bold;">Acesso completo por apenas</p>
@@ -629,7 +706,7 @@ class UiService:
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button("🔼 Tornar-se VIP", use_container_width=True, type="primary"):
+            if st.button("Tornar-se VIP", use_container_width=True, type="primary"):
                 st.session_state.current_page = "offers"
                 save_persistent_data()
                 st.rerun()
@@ -638,7 +715,7 @@ class UiService:
             st.markdown("""
             <div style="text-align: center; font-size: 0.7em; color: #888;">
                 <p>© 2024 Paloma Premium</p>
-                <p>🔞 Conteúdo para maiores de 18 anos</p>
+                <p>Conteúdo para maiores de 18 anos</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -671,26 +748,26 @@ class UiService:
                     color: #ff66b3;
                     margin-top: -10px;
                 ">
-                    🔒 Conteúdo bloqueado
+                    Conteúdo bloqueado
                 </div>
                 """, unsafe_allow_html=True)
         
         st.markdown("---")
         st.markdown("""
         <div style="text-align: center;">
-            <h4>🔓 Desbloqueie acesso completo</h4>
+            <h4>Desbloqueie acesso completo</h4>
             <p>Assine o plano VIP para ver todos os conteúdos</p>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("💎 Tornar-se VIP", 
+        if st.button("Tornar-se VIP", 
                     key="vip_button_gallery", 
                     use_container_width=True,
                     type="primary"):
             st.session_state.current_page = "offers"
             st.rerun()
         
-        if st.button("← Voltar ao chat", key="back_from_gallery"):
+        if st.button("Voltar ao chat", key="back_from_gallery"):
             st.session_state.current_page = "chat"
             save_persistent_data()
             st.rerun()
@@ -699,28 +776,28 @@ class UiService:
     def chat_shortcuts():
         cols = st.columns(4)
         with cols[0]:
-            if st.button("🏠 Início", key="shortcut_home", 
+            if st.button("Início", key="shortcut_home", 
                        help="Voltar para a página inicial",
                        use_container_width=True):
                 st.session_state.current_page = "home"
                 save_persistent_data()
                 st.rerun()
         with cols[1]:
-            if st.button("📸 Galeria", key="shortcut_gallery",
+            if st.button("Galeria", key="shortcut_gallery",
                        help="Acessar galeria privada",
                        use_container_width=True):
                 st.session_state.current_page = "gallery"
                 save_persistent_data()
                 st.rerun()
         with cols[2]:
-            if st.button("🎁 Ofertas", key="shortcut_offers",
+            if st.button("Ofertas", key="shortcut_offers",
                        help="Ver ofertas especiais",
                        use_container_width=True):
                 st.session_state.current_page = "offers"
                 save_persistent_data()
                 st.rerun()
         with cols[3]:
-            if st.button("💎 VIP", key="shortcut_vip",
+            if st.button("VIP", key="shortcut_vip",
                        help="Acessar área VIP",
                        use_container_width=True):
                 st.session_state.current_page = "vip"
@@ -778,7 +855,7 @@ class UiService:
         
         st.markdown(f"""
         <div class="chat-header">
-            <h2 style="margin:0; font-size:1.5em; display:inline-block;">💬 Chat Privado com Paloma</h2>
+            <h2 style="margin:0; font-size:1.5em; display:inline-block;">Chat Privado com Paloma</h2>
         </div>
         """, unsafe_allow_html=True)
         
@@ -808,12 +885,12 @@ class UiService:
             font-size: 0.8em;
             color: #888;
         ">
-            <p>🔒 Conversa privada • ✉️ Suas mensagens são confidenciais</p>
+            <p>Conversa privada • Suas mensagens são confidenciais</p>
         </div>
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS (ATUALIZADO COM SUAS PÁGINAS PRONTAS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -842,7 +919,7 @@ class NewPages:
 
         st.markdown("""
         <div class="hero-banner">
-            <h1 style="color: #ff66b3;">💋 Paloma Premium</h1>
+            <h1 style="color: #ff66b3;">Paloma Premium</h1>
             <p>Conteúdo exclusivo que você não encontra em nenhum outro lugar...</p>
             <div style="margin-top: 20px;">
                 <a href="#vip" style="
@@ -862,20 +939,19 @@ class NewPages:
         
         for col, img in zip(cols, Config.IMG_HOME_PREVIEWS):
             with col:
-                st.image(img, use_container_width=True, caption="🔒 Conteúdo bloqueado", output_format="auto")
+                st.image(img, use_container_width=True, caption="Conteúdo bloqueado", output_format="auto")
                 st.markdown("""<div style="text-align:center; color: #ff66b3; margin-top: -15px;">VIP Only</div>""", unsafe_allow_html=True)
 
         st.markdown("---")
         
-        # Botão de Iniciar Conversa Privada (mantido do código original)
-        if st.button("💬 Iniciar Conversa Privada", 
+        if st.button("Iniciar Conversa Privada", 
                     use_container_width=True,
                     type="primary"):
             st.session_state.current_page = "chat"
             save_persistent_data()
             st.rerun()
 
-        if st.button("← Voltar ao chat", key="back_from_home"):
+        if st.button("Voltar ao chat", key="back_from_home"):
             st.session_state.current_page = "chat"
             save_persistent_data()
             st.rerun()
@@ -982,7 +1058,7 @@ class NewPages:
 
         st.markdown("""
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">📦 PACOTES EXCLUSIVOS</h2>
+            <h2 style="color: #ff66b3; border-bottom: 2px solid #ff66b3; display: inline-block; padding-bottom: 5px;">PACOTES EXCLUSIVOS</h2>
             <p style="color: #aaa; margin-top: 10px;">Escolha o que melhor combina com seus desejos...</p>
         </div>
         """, unsafe_allow_html=True)
@@ -1102,7 +1178,7 @@ class NewPages:
 
         st.markdown("""
         <div class="countdown-container">
-            <h3 style="margin:0;">⏳ OFERTA RELÂMPAGO</h3>
+            <h3 style="margin:0;">OFERTA RELÂMPAGO</h3>
             <div id="countdown" style="font-size: 1.5em; font-weight: bold;">23:59:59</div>
             <p style="margin:5px 0 0;">Termina em breve!</p>
         </div>
@@ -1192,7 +1268,7 @@ class NewPages:
                 </div>
                 """, unsafe_allow_html=True)
 
-        if st.button("← Voltar ao chat", key="back_from_offers"):
+        if st.button("Voltar ao chat", key="back_from_offers"):
             st.session_state.current_page = "chat"
             save_persistent_data()
             st.rerun()
@@ -1259,8 +1335,6 @@ class ChatService:
                         content_data = json.loads(msg["content"])
                         if isinstance(content_data, dict):
                             with st.chat_message("assistant", avatar="💋"):
-                                # REMOÇÃO DE EMOJIS
-                                clean_text = re.sub(r'[^\w\s,.!?;:]', '', content_data.get("text", ""))
                                 st.markdown(f"""
                                 <div style="
                                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1269,7 +1343,7 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {clean_text}
+                                    {content_data.get("text", "")}
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
@@ -1284,7 +1358,6 @@ class ChatService:
                                         st.rerun()
                         else:
                             with st.chat_message("assistant", avatar="💋"):
-                                clean_text = re.sub(r'[^\w\s,.!?;:]', '', msg["content"])
                                 st.markdown(f"""
                                 <div style="
                                     background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1293,12 +1366,11 @@ class ChatService:
                                     border-radius: 18px 18px 18px 0;
                                     margin: 5px 0;
                                 ">
-                                    {clean_text}
+                                    {msg["content"]}
                                 </div>
                                 """, unsafe_allow_html=True)
                     except json.JSONDecodeError:
                         with st.chat_message("assistant", avatar="💋"):
-                            clean_text = re.sub(r'[^\w\s,.!?;:]', '', msg["content"])
                             st.markdown(f"""
                             <div style="
                                 background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1307,7 +1379,7 @@ class ChatService:
                                 border-radius: 18px 18px 18px 0;
                                 margin: 5px 0;
                             ">
-                                {clean_text}
+                                {msg["content"]}
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -1339,7 +1411,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        user_input = st.chat_input("Escreva sua mensagem aqui", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1390,8 +1462,6 @@ class ChatService:
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
                 
                 if isinstance(resposta, dict):
-                    # REMOÇÃO DE EMOJIS
-                    clean_text = re.sub(r'[^\w\s,.!?;:]', '', resposta.get("text", ""))
                     st.markdown(f"""
                     <div style="
                         background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1400,7 +1470,7 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {clean_text}
+                        {resposta.get("text", "")}
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1414,7 +1484,6 @@ class ChatService:
                             save_persistent_data()
                             st.rerun()
                 else:
-                    clean_text = re.sub(r'[^\w\s,.!?;:]', '', resposta)
                     st.markdown(f"""
                     <div style="
                         background: linear-gradient(45deg, #ff66b3, #ff1493);
@@ -1423,7 +1492,7 @@ class ChatService:
                         border-radius: 18px 18px 18px 0;
                         margin: 5px 0;
                     ">
-                        {clean_text}
+                        {resposta}
                     </div>
                     """, unsafe_allow_html=True)
             
@@ -1518,7 +1587,7 @@ def main():
             </div>
             """.format(profile_img=Config.IMG_PROFILE), unsafe_allow_html=True)
             
-            if st.button("💬 Iniciar Conversa", type="primary", use_container_width=True):
+            if st.button("Iniciar Conversa", type="primary", use_container_width=True):
                 st.session_state.update({
                     'chat_started': True,
                     'current_page': 'chat',
@@ -1540,7 +1609,7 @@ def main():
         st.rerun()
     elif st.session_state.get("show_vip_offer", False):
         st.warning("Página VIP em desenvolvimento")
-        if st.button("← Voltar ao chat"):
+        if st.button("Voltar ao chat"):
             st.session_state.show_vip_offer = False
             save_persistent_data()
             st.rerun()
