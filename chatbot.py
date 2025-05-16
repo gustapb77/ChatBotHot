@@ -263,9 +263,6 @@ class ApiService:
         # Delay antes de "Digitando" (2-5s)
         time.sleep(random.uniform(2, 5))
         
-        # Mostra "Digitando"
-        UiService.show_status_effect(status_container, "typing")
-        
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
@@ -286,21 +283,26 @@ class ApiService:
                 else:
                     resposta = json.loads(gemini_response)
                 
+                # REMOVER EMOJIS
+                resposta["text"] = re.sub(r'[^\w\s,.!?;:]', '', resposta["text"])
+                
                 if resposta.get("cta", {}).get("show"):
                     DatabaseService.save_message(conn, get_user_id(), session_id, "assistant", json.dumps(resposta))
                     return {
                         "text": resposta["text"],
                         "button": True,
                         "button_text": resposta["cta"]["label"],
-                        "button_target": "offers"  # Garante redirecionamento
+                        "button_target": "offers"
                     }
                 return {"text": resposta["text"], "button": False}
             
             except json.JSONDecodeError:
-                return {"text": gemini_response, "button": False}
+                # REMOVER EMOJIS
+                clean_response = re.sub(r'[^\w\s,.!?;:]', '', gemini_response)
+                return {"text": clean_response, "button": False}
                 
         except Exception:
-            return {"text": "Vamos continuar isso mais tarde...", "button": False}
+            return {"text": "Vamos continuar isso mais tarde", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -380,7 +382,6 @@ class UiService:
 
     @staticmethod
     def show_status_effect(container, status_type):
-        # Define mensagens fixas (sem variação aleatória)
         status_messages = {
             "viewed": "Visualizado",  
             "typing": "Digitando"  
@@ -388,15 +389,14 @@ class UiService:
         
         message = status_messages[status_type]
         dots = ""
-        duration = 3.0 if status_type == "viewed" else random.uniform(3, 7)  # Tempo de duração
+        duration = 3.0 if status_type == "viewed" else random.uniform(3, 7)
         
-        # Mostra o status com dots animados
         start_time = time.time()
         while time.time() - start_time < duration:
             elapsed = time.time() - start_time
             
             if status_type == "typing":
-                dots = "." * (int(elapsed * 2) % 4)  # Anima os pontos ("Digitando...")
+                dots = "." * (int(elapsed * 2) % 4)
             
             container.markdown(f"""
             <div style="
@@ -416,7 +416,7 @@ class UiService:
             
             time.sleep(0.3)
         
-        container.empty()
+        return container
 
     @staticmethod
     def show_audio_recording_effect(container):
@@ -870,7 +870,6 @@ class NewPages:
 
         st.markdown("---")
         
-        # Botão de Iniciar Conversa Privada (mantido do código original)
         if st.button("💬 Iniciar Conversa Privada", 
                     use_container_width=True,
                     type="primary"):
@@ -1338,7 +1337,7 @@ class ChatService:
             save_persistent_data()
             st.rerun()
         
-        user_input = st.chat_input("Oi amor, como posso te ajudar hoje? 💭", key="chat_input")
+        user_input = st.chat_input("Oi amor, como posso te ajudar hoje?", key="chat_input")
         
         if user_input:
             cleaned_input = ChatService.validate_input(user_input)
@@ -1346,14 +1345,14 @@ class ChatService:
             if st.session_state.request_count >= Config.MAX_REQUESTS_PER_SESSION:
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "amor... Vou ficar ocupada agora, me manda mensagem depois? "
+                    "content": "Vou ficar ocupada agora, me manda mensagem depois?"
                 })
                 DatabaseService.save_message(
                     conn,
                     get_user_id(),
                     st.session_state.session_id,
                     "assistant",
-                    "Estou ficando cansada, amor... Que tal continuarmos mais tarde? 💋"
+                    "Estou ficando cansada, vamos continuar mais tarde"
                 )
                 save_persistent_data()
                 st.rerun()
@@ -1385,43 +1384,56 @@ class ChatService:
                 </div>
                 """, unsafe_allow_html=True)
             
-            with st.chat_message("assistant", avatar="💋"):
-                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-                
-                if isinstance(resposta, dict):
-                    st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(45deg, #ff66b3, #ff1493);
-                        color: white;
-                        padding: 12px;
-                        border-radius: 18px 18px 18px 0;
-                        margin: 5px 0;
-                    ">
-                        {resposta.get("text", "")}
-                    </div>
-                    """, unsafe_allow_html=True)
+            # Container único para a resposta
+            message_container = st.empty()
+            with message_container.container():
+                with st.chat_message("assistant", avatar="💋"):
+                    status_container = st.empty()
                     
-                    if resposta.get("button", False):
-                        if st.button(
-                            resposta.get("button_text", "Ver Ofertas"),
-                            key=f"chat_button_{time.time()}",
-                            use_container_width=True
-                        ):
-                            st.session_state.current_page = resposta.get("button_target", "offers")
-                            save_persistent_data()
-                            st.rerun()
-                else:
-                    st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(45deg, #ff66b3, #ff1493);
-                        color: white;
-                        padding: 12px;
-                        border-radius: 18px 18px 18px 0;
-                        margin: 5px 0;
-                    ">
-                        {resposta}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Mostra "Visualizado" e depois "Digitando" no mesmo container
+                    UiService.show_status_effect(status_container, "viewed")
+                    typing_container = UiService.show_status_effect(status_container, "typing")
+                    
+                    # Obtém a resposta
+                    resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                    
+                    # Limpa o status e mostra a resposta
+                    typing_container.empty()
+                    
+                    if isinstance(resposta, dict):
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(45deg, #ff66b3, #ff1493);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 18px 18px 18px 0;
+                            margin: 5px 0;
+                        ">
+                            {resposta.get("text", "")}
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        if resposta.get("button", False):
+                            if st.button(
+                                resposta.get("button_text", "Ver Ofertas"),
+                                key=f"chat_button_{time.time()}",
+                                use_container_width=True
+                            ):
+                                st.session_state.current_page = resposta.get("button_target", "offers")
+                                save_persistent_data()
+                                st.rerun()
+                    else:
+                        st.markdown(f"""
+                        <div style="
+                            background: linear-gradient(45deg, #ff66b3, #ff1493);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 18px 18px 18px 0;
+                            margin: 5px 0;
+                        ">
+                            {resposta}
+                        </div>
+                        """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
