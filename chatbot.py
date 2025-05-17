@@ -174,34 +174,6 @@ def save_persistent_data():
     db.save_state(user_id, data_to_save)
 
 # ======================
-# RESUMO MANUAL (NOVA IMPLEMENTAÇÃO)
-# ======================
-class ContextSummarizer:
-    @staticmethod
-    def summarize(messages: list) -> str:
-        """Resume o histórico da conversa mantendo pontos-chave"""
-        if not messages:
-            return "Nenhum contexto anterior"
-            
-        summary_points = []
-        for msg in messages[-6:]:  # Analisa as últimas 6 mensagens
-            content = msg["content"].lower()
-            
-            # Padrões de interesse
-            if any(word in content for word in ["buceta", "peito", "foto", "nude"]):
-                summary_points.append("📸 Cliente pediu fotos íntimas")
-            elif any(word in content for word in ["video", "transar", "gozar"]):
-                summary_points.append("🎥 Cliente pediu vídeos")
-            elif any(word in content for word in ["preço", "valor", "comprar", "vip"]):
-                summary_points.append("💵 Interesse em VIP")
-            elif msg["role"] == "user":
-                summary_points.append(f"👤 Disse: {content[:30]}...")
-            else:
-                summary_points.append(f"💋 Respondi: {content[:30]}...")
-        
-        return " | ".join(list(set(summary_points)))  # Remove duplicados
-
-# ======================
 # MODELOS DE DADOS
 # ======================
 class Persona:
@@ -249,6 +221,7 @@ class Persona:
         "target": "offers"
       }
     }
+    ```
     """
 
 class CTAEngine:
@@ -260,9 +233,13 @@ class CTAEngine:
 
         last_msgs = [msg["content"].lower() for msg in conversation_history[-3:]]
         
+        # Termos que indicam clima sexual
         hot_words = ["buceta", "peito", "fuder", "gozar", "gostosa", "delicia", "molhadinha"]
+        
+        # Conta quantas mensagens recentes tem termos quentes
         hot_count = sum(1 for msg in last_msgs if any(word in msg for word in hot_words))
         
+        # Pedidos diretos
         direct_asks = ["mostra", "quero ver", "me manda", "como assinar"]
         
         return (hot_count >= 2) or any(ask in last_msgs[-1] for ask in direct_asks)
@@ -300,7 +277,7 @@ class CTAEngine:
                 }
             }
         
-        else:
+        else:  # Resposta padrão quando o clima estiver quente
             return {
                 "text": random.choice([
                     "quero te mostrar tudo que eu tenho aqui",
@@ -322,24 +299,21 @@ class DatabaseService:
     def init_db():
         conn = sqlite3.connect('chat_history.db', check_same_thread=False)
         c = conn.cursor()
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS conversations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT,
-                session_id TEXT,
-                timestamp DATETIME,
-                role TEXT,
-                content TEXT
-            )
-        ''')
+        c.execute('''CREATE TABLE IF NOT EXISTS conversations
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     user_id TEXT,
+                     session_id TEXT,
+                     timestamp DATETIME,
+                     role TEXT,
+                     content TEXT)''')
         conn.commit()
         return conn
 
     @staticmethod
     def save_message(conn, user_id, session_id, role, content):
         try:
-            cursor = conn.cursor()
-            cursor.execute("""
+            c = conn.cursor()
+            c.execute("""
                 INSERT INTO conversations (user_id, session_id, timestamp, role, content)
                 VALUES (?, ?, ?, ?, ?)
             """, (user_id, session_id, datetime.now(), role, content))
@@ -358,7 +332,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO COM RESUMO MANUAL)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -367,31 +341,16 @@ class ApiService:
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
         
-        # Resumo do contexto (NOVO)
-        context_summary = ContextSummarizer.summarize(st.session_state.messages)
-        
-        # Monta o prompt com contexto (NOVO)
-        full_prompt = f"""
-        {Persona.PALOMA}
-        
-        CONTEXTO RESUMIDO:
-        {context_summary}
-        
-        ÚLTIMA MENSAGEM DO CLIENTE:
-        '{prompt}'
-        
-        Responda em JSON mantendo continuidade.
-        """
+        # Primeiro verifica se deve mostrar CTA pelo contexto
+        if CTAEngine.should_show_cta(st.session_state.messages):
+            return CTAEngine.generate_response(prompt)
         
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{"text": full_prompt}]
-            }],
-            "generationConfig": {
-                "maxOutputTokens": 200
-            }
+                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
+            }]
         }
         
         try:
@@ -405,12 +364,13 @@ class ApiService:
                 else:
                     resposta = json.loads(gemini_response)
                 
+                # Garante que o CTA só apareça se o contexto permitir
                 if resposta.get("cta", {}).get("show"):
                     if not CTAEngine.should_show_cta(st.session_state.messages):
                         resposta["cta"]["show"] = False
                 
                 return resposta
-                
+            
             except json.JSONDecodeError:
                 return {"text": gemini_response, "button": False}
                 
@@ -497,7 +457,7 @@ class UiService:
     def show_status_effect(container, status_type):
         status_messages = {
             "viewed": "Visualizado",
-            "typing": "Digitando"
+            "typing": "Digitando"  # Alterado para "Digitando" conforme solicitado
         }
         
         message = status_messages[status_type]
@@ -1241,7 +1201,7 @@ class NewPages:
             if (hours < 0) { hours = 23; }
             
             countdownElement.textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padstart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             setTimeout(updateCountdown, 1000);
         }
@@ -1314,7 +1274,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
