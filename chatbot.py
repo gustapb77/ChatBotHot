@@ -195,90 +195,101 @@ class Persona:
        - Só oferece conteúdo quando o clima esquentar
        - CTAs inteligentes baseados no contexto
        - Respostas alinhadas ao que o cliente pediu
+
+    [EXEMPLOS]
+    1. Quando pede foto:
+    Usuário: "mostra essa buceta"
+    Resposta: ```json
+    {
+      "text": "minha buceta ta escorrendo nas fotos quer ver",
+      "cta": {
+        "show": true,
+        "label": "Ver Fotos da Buceta",
+        "target": "offers"
+      }
+    }
+    ```
+
+    2. Quando elogia:
+    Usuário: "vc é muito gostosa"
+    Resposta: ```json
+    {
+      "text": "to ainda mais gostosa no privado vem ver",
+      "cta": {
+        "show": true,
+        "label": "Ver Conteúdo Exclusivo",
+        "target": "offers"
+      }
+    }
+    ```
     """
 
 class CTAEngine:
     @staticmethod
-    def analyze_conversation(history: list) -> dict:
-        """Analisa o contexto completo para decisão estratégica de CTA"""
-        analysis = {
-            'sexual_intensity': 0,
-            'user_engagement': 0,
-            'cta_opportunity': False,
-            'best_cta_type': None
-        }
+    def should_show_cta(conversation_history: list) -> bool:
+        """Analisa o contexto para decidir quando mostrar CTA"""
+        if len(conversation_history) < 2:
+            return False
+
+        last_msgs = [msg["content"].lower() for msg in conversation_history[-3:]]
         
-        sexual_keywords = ['buceta', 'peito', 'fuder', 'gozar', 'gostosa', 'delicia', 'molhadinha']
-        interest_keywords = ['quero ver', 'mostra mais', 'como assinar', 'como funciona']
+        # Termos que indicam clima sexual
+        hot_words = ["buceta", "peito", "fuder", "gozar", "gostosa", "delicia", "molhadinha"]
         
-        recent_msgs = [msg['content'].lower() for msg in history[-5:]]
+        # Conta quantas mensagens recentes tem termos quentes
+        hot_count = sum(1 for msg in last_msgs if any(word in msg for word in hot_words))
         
-        analysis['sexual_intensity'] = min(
-            100, 
-            sum(10 for msg in recent_msgs if any(kw in msg for kw in sexual_keywords))
-        )
+        # Pedidos diretos
+        direct_asks = ["mostra", "quero ver", "me manda", "como assinar"]
         
-        analysis['user_engagement'] = min(
-            100,
-            len([msg for msg in history if msg['role'] == 'user']) * 5
-        )
-        
-        analysis['cta_opportunity'] = (
-            analysis['sexual_intensity'] >= 60 or 
-            any(kw in recent_msgs[-1] for kw in interest_keywords))
-        
-        if 'video' in recent_msgs[-1]:
-            analysis['best_cta_type'] = 'videos'
-        elif 'foto' in recent_msgs[-1] or 'buceta' in recent_msgs[-1]:
-            analysis['best_cta_type'] = 'fotos'
-        else:
-            analysis['best_cta_type'] = 'vip'
-        
-        return analysis
+        return (hot_count >= 2) or any(ask in last_msgs[-1] for ask in direct_asks)
 
     @staticmethod
-    def generate_cta(context_analysis: dict) -> dict:
-        """Gera CTA com base na análise contextual"""
-        cta_templates = {
-            'fotos': {
-                'text': random.choice([
-                    "to com um ensaio novo mostrando tudinho quer ver?",
-                    "minha buceta ta chamando seu nome nas fotos",
-                    "fiz fotos especiais pra vc hoje"
+    def generate_response(user_input: str) -> dict:
+        """Gera resposta com CTA contextual"""
+        user_input = user_input.lower()
+        
+        if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
+            return {
+                "text": random.choice([
+                    "to com fotos da minha buceta bem aberta quer ver",
+                    "minha buceta ta chamando vc nas fotos",
+                    "fiz um ensaio novo mostrando tudinho"
                 ]),
-                'button': {
-                    'show': True,
-                    'label': "Ver Fotos Exclusivas",
-                    'target': "gallery"
+                "cta": {
+                    "show": True,
+                    "label": "Ver Fotos Quentes",
+                    "target": "offers"
                 }
-            },
-            'videos': {
-                'text': random.choice([
-                    "gravei um video me masturbando hoje quer ver?",
-                    "to me tocando nesse video novo vem ver",
-                    "tenho um video quente esperando por vc"
+            }
+        
+        elif any(v in user_input for v in ["video", "transar", "masturbar"]):
+            return {
+                "text": random.choice([
+                    "tenho video me masturbando gostoso vem ver",
+                    "to me tocando nesse video novo quer ver",
+                    "gravei um video especial pra vc"
                 ]),
-                'button': {
-                    'show': True,
-                    'label': "Ver Vídeos Quentes",
-                    'target': "vip"
+                "cta": {
+                    "show": True,
+                    "label": "Ver Vídeos Exclusivos",
+                    "target": "offers"
                 }
-            },
-            'vip': {
-                'text': random.choice([
-                    "quero te mostrar tudo que eu tenho aqui amor",
+            }
+        
+        else:  # Resposta padrão quando o clima estiver quente
+            return {
+                "text": random.choice([
+                    "quero te mostrar tudo que eu tenho aqui",
                     "meu privado ta cheio de surpresas pra vc",
                     "vem ver o que eu fiz pensando em voce"
                 ]),
-                'button': {
-                    'show': True,
-                    'label': "Quero Acessar Tudo",
-                    'target': "offers"
+                "cta": {
+                    "show": True,
+                    "label": "Conteúdo VIP",
+                    "target": "offers"
                 }
             }
-        }
-        
-        return cta_templates.get(context_analysis['best_cta_type'], {})
 
 # ======================
 # SERVIÇOS DE BANCO DE DADOS
@@ -311,14 +322,13 @@ class DatabaseService:
             st.error(f"Erro ao salvar mensagem: {e}")
 
     @staticmethod
-    def load_messages(conn, user_id, session_id, limit=10):
+    def load_messages(conn, user_id, session_id):
         c = conn.cursor()
         c.execute("""
             SELECT role, content FROM conversations 
             WHERE user_id = ? AND session_id = ?
-            ORDER BY timestamp DESC
-            LIMIT ?
-        """, (user_id, session_id, limit))
+            ORDER BY timestamp
+        """, (user_id, session_id))
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
@@ -331,53 +341,55 @@ class ApiService:
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
         
-        history = DatabaseService.load_messages(conn, get_user_id(), session_id)
-        context_analysis = CTAEngine.analyze_conversation(history)
+        # Primeiro verifica se deve mostrar CTA pelo contexto
+        if CTAEngine.should_show_cta(st.session_state.messages):
+            return CTAEngine.generate_response(prompt)
         
-        formatted_history = [
-            {"role": msg["role"], "parts": [{"text": msg["content"]}]}
-            for msg in history[-6:]
-        ]
+        # Pega o histórico de mensagens
+        history_messages = DatabaseService.load_messages(conn, get_user_id(), session_id)
         
-        system_prompt = f"""
-        [CONTEXTO DA CONVERSA]
-        - Nível de intensidade: {context_analysis['sexual_intensity']}/100
-        - Engajamento do usuário: {context_analysis['user_engagement']}/100
-        - Últimos tópicos: {[msg['content'][:20] for msg in history[-3:]]}
+        # Prepara o contexto histórico formatado
+        history_context = "\n".join(
+            f"{'USUÁRIO' if msg['role'] == 'user' else 'PALOMA'}: {msg['content']}" 
+            for msg in history_messages[-6:]  # Últimas 6 mensagens (3 interações)
+        )
         
-        {Persona.PALOMA}
-        """
-        
+        headers = {'Content-Type': 'application/json'}
         data = {
-            "contents": [
-                *formatted_history,
-                {
-                    "role": "user", 
-                    "parts": [{"text": prompt}]
-                }
-            ],
-            "system_instruction": {
-                "parts": [{"text": system_prompt}]
+            "contents": [{
+                "role": "user",
+                "parts": [{
+                    "text": f"{Persona.PALOMA}\n\n[CONTEXTO DA CONVERSA]\n{history_context}\n\nCliente disse: '{prompt}'\nResponda em JSON"
+                }]
+            }],
+            "generationConfig": {
+                "temperature": 0.9  # Aumenta a criatividade
             }
         }
         
         try:
-            response = requests.post(Config.API_URL, json=data, timeout=Config.REQUEST_TIMEOUT)
+            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
-            if context_analysis['cta_opportunity']:
-                cta_response = CTAEngine.generate_cta(context_analysis)
-                if random.random() < 0.7:
-                    return {
-                        "text": f"{gemini_response}\n\n{cta_response['text']}",
-                        "cta": cta_response['button']
-                    }
+            try:
+                if '```json' in gemini_response:
+                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                else:
+                    resposta = json.loads(gemini_response)
+                
+                # Garante que o CTA só apareça se o contexto permitir
+                if resposta.get("cta", {}).get("show"):
+                    if not CTAEngine.should_show_cta(st.session_state.messages):
+                        resposta["cta"]["show"] = False
+                
+                return resposta
             
-            return {"text": gemini_response, "cta": {"show": False}}
+            except json.JSONDecodeError:
+                return {"text": gemini_response, "button": False}
                 
         except Exception:
-            return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
+            return {"text": "Vamos continuar isso mais tarde...", "button": False}
 
 # ======================
 # SERVIÇOS DE INTERFACE
@@ -459,7 +471,7 @@ class UiService:
     def show_status_effect(container, status_type):
         status_messages = {
             "viewed": "Visualizado",
-            "typing": "Digitando"
+            "typing": "Digitando"  # Alterado para "Digitando" conforme solicitado
         }
         
         message = status_messages[status_type]
@@ -1349,13 +1361,13 @@ class ChatService:
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                if content_data.get("cta", {}).get("show"):
+                                if content_data.get("button", False):
                                     if st.button(
-                                        content_data["cta"]["label"],
-                                        key=f"cta_{msg.get('timestamp', '')}",
+                                        content_data.get("button_text", "Ver Ofertas"),
+                                        key=f"hist_button_{msg.get('timestamp', '')}",
                                         use_container_width=True
                                     ):
-                                        st.session_state.current_page = content_data["cta"]["target"]
+                                        st.session_state.current_page = content_data.get("button_target", "offers")
                                         save_persistent_data()
                                         st.rerun()
                         else:
@@ -1463,28 +1475,40 @@ class ChatService:
             with st.chat_message("assistant", avatar="💋"):
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
                 
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(45deg, #ff66b3, #ff1493);
-                    color: white;
-                    padding: 12px;
-                    border-radius: 18px 18px 18px 0;
-                    margin: 5px 0;
-                ">
-                    {resposta.get("text", "")}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if resposta.get("cta", {}).get("show"):
-                    if st.button(
-                        resposta["cta"]["label"],
-                        key=f"cta_{time.time()}",
-                        type="primary",
-                        use_container_width=True
-                    ):
-                        st.session_state.current_page = resposta["cta"]["target"]
-                        save_persistent_data()
-                        st.rerun()
+                if isinstance(resposta, dict):
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {resposta.get("text", "")}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if resposta.get("button", False):
+                        if st.button(
+                            resposta.get("button_text", "Ver Ofertas"),
+                            key=f"chat_button_{time.time()}",
+                            use_container_width=True
+                        ):
+                            st.session_state.current_page = resposta.get("button_target", "offers")
+                            save_persistent_data()
+                            st.rerun()
+                else:
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {resposta}
+                    </div>
+                    """, unsafe_allow_html=True)
             
             st.session_state.messages.append({
                 "role": "assistant",
