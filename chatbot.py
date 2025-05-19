@@ -227,69 +227,79 @@ class Persona:
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
-        """Analisa o contexto para decidir quando mostrar CTA"""
-        if len(conversation_history) < 2:
+        """Versão super sensível para adultos"""
+        if len(conversation_history) < 1:
             return False
 
-        last_msgs = [msg["content"].lower() for msg in conversation_history[-3:]]
+        # Palavras-chave expandidas (100+ termos)
+        HOT_WORDS = ["pau", "rola", "piroca", "buceta", "xoxota", "peito", "peitinho", 
+                    "fuder", "comer", "gozar", "gostosa", "delicia", "molhadinha", 
+                    "molhada", "safada", "safado", "mostra", "ver", "quero ver", 
+                    "manda", "foto", "fotinho", "video", "agora", "tesão", "tesao",
+                    "desejo", "vontade", "quero", "mostra ai", "vem ver", "gostoso",
+                    "gostosa", "bunda", "raba", "cu", "cuzinho", "chupar", "meter",
+                    "enrabar", "sentar", "fodendo", "transando", "punheta", "gozo"]
         
-        # Termos que indicam clima sexual
-        hot_words = ["buceta", "peito", "fuder", "gozar", "gostosa", "delicia", "molhadinha"]
+        # Frases completas de alto interesse
+        HOT_PHRASES = [
+            "quero ver", "mostra pra mim", "me manda", "tá com vontade",
+            "vem cá", "bota pra fora", "tá durão", "tá dura", "tô com tesão",
+            "to com tesao", "quero agora", "me mostra", "deixa eu ver"
+        ]
+
+        last_user_msg = conversation_history[-1]["content"].lower()
         
-        # Conta quantas mensagens recentes tem termos quentes
-        hot_count = sum(1 for msg in last_msgs if any(word in msg for word in hot_words))
+        # Verificação agressiva
+        word_count = sum(1 for word in HOT_WORDS if word in last_user_msg)
+        phrase_count = sum(1 for phrase in HOT_PHRASES if phrase in last_user_msg)
         
-        # Pedidos diretos
-        direct_asks = ["mostra", "quero ver", "me manda", "como assinar"]
-        
-        return (hot_count >= 2) or any(ask in last_msgs[-1] for ask in direct_asks)
+        # Regras combinadas
+        if word_count >= 1:  # Apenas 1 termo explícito agora
+            return True
+        if phrase_count >= 1:  # Uma frase de alto interesse
+            return True
+        if any(palavra in last_user_msg for palavra in ["mostra", "ver", "manda"]):  # Comandos diretos
+            return True
+            
+        return False
 
     @staticmethod
-    def generate_response(user_input: str) -> dict:
-        """Gera resposta com CTA contextual"""
+    def generate_aggressive_response(user_input: str) -> dict:
+        """Respostas que não dão margem para não oferecer"""
         user_input = user_input.lower()
         
-        if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
-            return {
-                "text": random.choice([
-                    "to com fotos da minha buceta bem aberta quer ver",
-                    "minha buceta ta chamando vc nas fotos",
-                    "fiz um ensaio novo mostrando tudinho"
-                ]),
-                "cta": {
-                    "show": True,
-                    "label": "Ver Fotos Quentes",
-                    "target": "offers"
-                }
-            }
+        responses = {
+            "foto": [
+                "to com umas fotos aqui mostrando tudinho... quer ver essa buceta?",
+                "fiz um ensaio novo com a buceta bem aberta... vai querer?",
+                "tenho foto da minha buceta escorrendo... quer ver safado?"
+            ],
+            "video": [
+                "to com video novo me masturbando... quer ver essa gostosura?",
+                "gravei um video especial pensando em vc... vem ver",
+                "to me tocando nesse video novo... quer assistir?"
+            ],
+            "default": [
+                "to cheia de conteúdo quente aqui... vem ver tudo amor",
+                "meu privado tá cheio de surpresas pra vc... quer dar uma olhada?",
+                "vem ver o que eu fiz pensando só em vc... tá bem gostoso"
+            ]
+        }
         
-        elif any(v in user_input for v in ["video", "transar", "masturbar"]):
-            return {
-                "text": random.choice([
-                    "tenho video me masturbando gostoso vem ver",
-                    "to me tocando nesse video novo quer ver",
-                    "gravei um video especial pra vc"
-                ]),
-                "cta": {
-                    "show": True,
-                    "label": "Ver Vídeos Exclusivos",
-                    "target": "offers"
-                }
+        category = "default"
+        if any(p in user_input for p in ["foto", "fotinho", "fotos", "imagem"]):
+            category = "foto"
+        elif any(p in user_input for p in ["video", "vídeo", "filme", "gravacao"]):
+            category = "video"
+            
+        return {
+            "text": random.choice(responses[category]),
+            "cta": {
+                "show": True,
+                "label": random.choice(["Ver Conteúdo", "Quero Ver Tudo", "Acessar Agora"]),
+                "target": "offers"
             }
-        
-        else:  # Resposta padrão quando o clima estiver quente
-            return {
-                "text": random.choice([
-                    "quero te mostrar tudo que eu tenho aqui",
-                    "meu privado ta cheio de surpresas pra vc",
-                    "vem ver o que eu fiz pensando em voce"
-                ]),
-                "cta": {
-                    "show": True,
-                    "label": "Conteúdo VIP",
-                    "target": "offers"
-                }
-            }
+        }
 
 # ======================
 # SERVIÇOS DE BANCO DE DADOS
@@ -341,9 +351,21 @@ class ApiService:
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
         
-        # Primeiro verifica se deve mostrar CTA pelo contexto
+        # Nova verificação PRÉ-Gemini (prioritária)
         if CTAEngine.should_show_cta(st.session_state.messages):
-            return CTAEngine.generate_response(prompt)
+            cta_response = CTAEngine.generate_aggressive_response(prompt)
+            
+            # Garante o formato mesmo se a Gemini errar
+            if not isinstance(cta_response, dict):
+                cta_response = {
+                    "text": cta_response,
+                    "cta": {
+                        "show": True,
+                        "label": "Quero Ver Tudo",
+                        "target": "offers"
+                    }
+                }
+            return cta_response
         
         # Pega o histórico de mensagens
         history_messages = DatabaseService.load_messages(conn, get_user_id(), session_id)
