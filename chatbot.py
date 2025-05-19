@@ -345,26 +345,12 @@ class ApiService:
         if CTAEngine.should_show_cta(st.session_state.messages):
             return CTAEngine.generate_response(prompt)
         
-        # Pega o histórico de mensagens
-        history_messages = DatabaseService.load_messages(conn, get_user_id(), session_id)
-        
-        # Prepara o contexto histórico formatado
-        history_context = "\n".join(
-            f"{'USUÁRIO' if msg['role'] == 'user' else 'PALOMA'}: {msg['content']}" 
-            for msg in history_messages[-6:]  # Últimas 6 mensagens (3 interações)
-        )
-        
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{
                 "role": "user",
-                "parts": [{
-                    "text": f"{Persona.PALOMA}\n\n[CONTEXTO DA CONVERSA]\n{history_context}\n\nCliente disse: '{prompt}'\nResponda em JSON"
-                }]
-            }],
-            "generationConfig": {
-                "temperature": 0.9  # Aumenta a criatividade
-            }
+                "parts": [{"text": f"{Persona.PALOMA}\nCliente disse: '{prompt}'\nResponda em JSON"}]
+            }]
         }
         
         try:
