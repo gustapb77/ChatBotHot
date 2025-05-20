@@ -718,21 +718,14 @@ class UiService:
             st.markdown("---")
             st.markdown("### Sua Conta")
             
-            status = "VIP Ativo" if random.random() > 0.2 else "Conteúdo Básico"
-            status_color = "#2ecc71" if status == "VIP Ativo" else "#f39c12"
-            
-            st.markdown(f"""
+            st.markdown("""
             <div style="
-                background: rgba(255, 20, 147, 0.1); 
-                padding: 10px; 
+                background: rgba(255, 20, 147, 0.1);
+                padding: 10px;
                 border-radius: 8px;
+                text-align: center;
             ">
-                <p style="margin: 0; font-size: 0.9em;">
-                    Status: <span style="color: {status_color}">{status}</span>
-                </p>
-                <p style="margin: 5px 0 0; font-size: 0.8em;">
-                    Expira em: {random.randint(1,30)} dias
-                </p>
+                <p style="margin:0;">Acesse conteúdo exclusivo</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -768,7 +761,7 @@ class UiService:
             border-radius: 10px;
             margin-bottom: 20px;
         ">
-            <p style="margin: 0;">Conteúdo exclusivo para assinantes VIP</p>
+            <p style="margin: 0;">Conteúdo exclusivo disponível</p>
         </div>
         """, unsafe_allow_html=True)
         
