@@ -369,12 +369,6 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        # 1. DELAY INICIAL (Paloma "ocupada" visualizando)
-        delay_container = st.empty()  # Container vazio que não mostra nada
-        time.sleep(random.uniform(3, 8))  # Delay aleatório entre 3-8s
-        delay_container.empty()  # Remove o container vazio
-
-        # 2. SISTEMA ORIGINAL (visualizado + digitando)
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
