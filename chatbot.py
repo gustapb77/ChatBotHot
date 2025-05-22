@@ -369,53 +369,57 @@ class DatabaseService:
 class ApiService:
     @staticmethod
     def ask_gemini(prompt, session_id, conn):
-        status_container = st.empty()
-        UiService.show_status_effect(status_container, "viewed")
-        UiService.show_status_effect(status_container, "typing")
+        # 1. DELAY INICIAL (sem nenhum elemento na tela)
+        time.sleep(random.uniform(3, 8))  # Delay aleatório entre 3-8s
         
-        # Construir o histórico de conversa formatado
-        conversation_history = ChatService.format_conversation_history(st.session_state.messages)
-        
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": f"{Persona.PALOMA}\n\nHistórico da Conversa:\n{conversation_history}\n\nÚltima mensagem do cliente: '{prompt}'\n\nResponda em JSON com o formato:\n{{\n  \"text\": \"sua resposta\",\n  \"cta\": {{\n    \"show\": true/false,\n    \"label\": \"texto do botão\",\n    \"target\": \"página\"\n  }}\n}}"}]
+        # 2. AGORA SIM MOSTRAMOS TUDO JUNTO (ícone + status)
+        with st.chat_message("assistant", avatar="💋"):
+            # Container para os status
+            status_container = st.empty()
+            
+            # Mostra os status
+            UiService.show_status_effect(status_container, "viewed")
+            UiService.show_status_effect(status_container, "typing")
+            
+            # 3. RESTO DO CÓDIGO ORIGINAL (não alterado)
+            headers = {'Content-Type': 'application/json'}
+            data = {
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [{"text": f"{Persona.PALOMA}\n\nHistórico da Conversa:\n{ChatService.format_conversation_history(st.session_state.messages)}\n\nÚltima mensagem do cliente: '{prompt}'\n\nResponda em JSON com o formato:\n{{\n  \"text\": \"sua resposta\",\n  \"cta\": {{\n    \"show\": true/false,\n    \"label\": \"texto do botão\",\n    \"target\": \"página\"\n  }}\n}}"}]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.9,
+                    "topP": 0.8,
+                    "topK": 40
                 }
-            ],
-            "generationConfig": {
-                "temperature": 0.9,  # Mais criativo
-                "topP": 0.8,
-                "topK": 40
             }
-        }
-        
-        try:
-            response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
             
             try:
-                if '```json' in gemini_response:
-                    resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
-                else:
-                    resposta = json.loads(gemini_response)
+                response = requests.post(Config.API_URL, headers=headers, json=data, timeout=Config.REQUEST_TIMEOUT)
+                response.raise_for_status()
+                gemini_response = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 
-                # Garante coerência com o contexto
-                if resposta.get("cta", {}).get("show"):
-                    if not CTAEngine.should_show_cta(st.session_state.messages):
-                        resposta["cta"]["show"] = False
+                try:
+                    if '```json' in gemini_response:
+                        resposta = json.loads(gemini_response.split('```json')[1].split('```')[0].strip())
+                    else:
+                        resposta = json.loads(gemini_response)
+                    
+                    if resposta.get("cta", {}).get("show"):
+                        if not CTAEngine.should_show_cta(st.session_state.messages):
+                            resposta["cta"]["show"] = False
+                    
+                    return resposta
                 
-                return resposta
-            
-            except json.JSONDecodeError:
-                # Fallback para resposta simples se o JSON estiver inválido
-                return {"text": gemini_response, "cta": {"show": False}}
-                
-        except Exception as e:
-            st.error(f"Erro na API: {str(e)}")
-            return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
+                except json.JSONDecodeError:
+                    return {"text": gemini_response, "cta": {"show": False}}
+                    
+            except Exception as e:
+                st.error(f"Erro na API: {str(e)}")
+                return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
 # SERVIÇOS DE INTERFACE
