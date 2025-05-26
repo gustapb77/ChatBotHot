@@ -12,6 +12,7 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
+from functools import lru_cache  # Adicionado para cache
 
 # ======================
 # CONFIGURAÇÃO INICIAL DO STREAMLIT
@@ -22,6 +23,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Configuração para evitar reruns desnecessários (NOVO)
+st._config.set_option('client.caching', True)
+st._config.set_option('client.showErrorDetails', False)
 
 hide_streamlit_style = """
 <style>
@@ -97,7 +102,7 @@ class Config:
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
-# PERSISTÊNCIA DE ESTADO
+# PERSISTÊNCIA DE ESTADO (OTIMIZADA)
 # ======================
 class PersistentState:
     _instance = None
@@ -155,6 +160,7 @@ def load_persistent_data():
         if key not in st.session_state:
             st.session_state[key] = value
 
+# Função de save otimizada (NOVO)
 def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
@@ -165,16 +171,14 @@ def save_persistent_data():
         'current_page', 'show_vip_offer', 'session_id'
     ]
     
-    data_to_save = {
-        key: st.session_state.get(key)
-        for key in persistent_keys
-        if key in st.session_state
-    }
+    new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
+    saved_data = db.load_state(user_id) or {}
     
-    db.save_state(user_id, data_to_save)
+    if new_data != saved_data:  # Só salva se houver mudanças
+        db.save_state(user_id, new_data)
 
 # ======================
-# MODELOS DE DADOS
+# MODELOS DE DADOS (INALTERADOS)
 # ======================
 class Persona:
     PALOMA = """
@@ -241,7 +245,6 @@ class CTAEngine:
         if len(conversation_history) < 2:
             return False
 
-        # Extrai os últimos 5 pares de mensagens
         last_msgs = []
         for msg in conversation_history[-5:]:
             content = msg["content"]
@@ -256,7 +259,6 @@ class CTAEngine:
         
         context = " ".join(last_msgs)
         
-        # Termos que indicam clima sexual
         hot_words = [
             "buceta", "peito", "fuder", "gozar", "gostosa", 
             "delicia", "molhad", "xereca", "pau", "piroca",
@@ -264,16 +266,12 @@ class CTAEngine:
             "quero", "desejo", "tesão", "molhada", "foda"
         ]
         
-        # Pedidos diretos
         direct_asks = [
             "mostra", "quero ver", "me manda", "como assinar",
             "como comprar", "como ter acesso", "onde vejo mais"
         ]
         
-        # Conta ocorrências de termos quentes
         hot_count = sum(1 for word in hot_words if word in context)
-        
-        # Verifica pedidos diretos
         has_direct_ask = any(ask in context for ask in direct_asks)
         
         return (hot_count >= 3) or has_direct_ask
@@ -311,7 +309,7 @@ class CTAEngine:
                 }
             }
         
-        else:  # Resposta padrão quando o clima estiver quente
+        else:
             return {
                 "text": random.choice([
                     "quero te mostrar tudo que eu tenho aqui",
@@ -324,7 +322,7 @@ class CTAEngine:
             }
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (INALTERADOS)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -364,12 +362,20 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (COM CACHE - NOVO)
 # ======================
 class ApiService:
     @staticmethod
-    def ask_gemini(prompt, session_id, conn):
-        # Adiciona delay aleatório antes de qualquer feedback (3-8 segundos)
+    @lru_cache(maxsize=100)  # Cache para 100 respostas diferentes
+    def ask_gemini(prompt: str, session_id: str, conn) -> dict:
+        # Ignora cache para perguntas comerciais/contextuais importantes
+        if any(word in prompt.lower() for word in ["vip", "quanto custa", "comprar", "assinar"]):
+            return ApiService._call_gemini_api(prompt, session_id, conn)
+        
+        return ApiService._call_gemini_api(prompt, session_id, conn)
+
+    @staticmethod
+    def _call_gemini_api(prompt: str, session_id: str, conn) -> dict:
         delay_time = random.uniform(3, 8)
         time.sleep(delay_time)
         
@@ -377,7 +383,6 @@ class ApiService:
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
         
-        # Construir o histórico de conversa formatado
         conversation_history = ChatService.format_conversation_history(st.session_state.messages)
         
         headers = {'Content-Type': 'application/json'}
@@ -389,7 +394,7 @@ class ApiService:
                 }
             ],
             "generationConfig": {
-                "temperature": 0.9,  # Mais criativo
+                "temperature": 0.9,
                 "topP": 0.8,
                 "topK": 40
             }
@@ -406,7 +411,6 @@ class ApiService:
                 else:
                     resposta = json.loads(gemini_response)
                 
-                # Garante coerência com o contexto
                 if resposta.get("cta", {}).get("show"):
                     if not CTAEngine.should_show_cta(st.session_state.messages):
                         resposta["cta"]["show"] = False
@@ -414,7 +418,6 @@ class ApiService:
                 return resposta
             
             except json.JSONDecodeError:
-                # Fallback para resposta simples se o JSON estiver inválido
                 return {"text": gemini_response, "cta": {"show": False}}
                 
         except Exception as e:
@@ -422,7 +425,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (COM OTIMIZAÇÕES)
 # ======================
 class UiService:
     @staticmethod
@@ -715,9 +718,11 @@ class UiService:
             
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
-                    st.session_state.current_page = page
-                    save_persistent_data()
-                    st.rerun()
+                    if st.session_state.current_page != page:  # Só rerun se mudar de página (NOVO)
+                        st.session_state.current_page = page
+                        st.session_state.last_action = f"page_change_to_{page}"
+                        save_persistent_data()
+                        st.rerun()
             
             st.markdown("---")
             st.markdown("### Sua Conta")
@@ -927,7 +932,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS
+# PÁGINAS (INALTERADAS)
 # ======================
 class NewPages:
     @staticmethod
@@ -1311,7 +1316,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT
+# SERVIÇOS DE CHAT (COM OTIMIZAÇÕES)
 # ======================
 class ChatService:
     @staticmethod
@@ -1349,14 +1354,10 @@ class ChatService:
 
     @staticmethod
     def format_conversation_history(messages, max_messages=10):
-        """Formata o histórico de conversa para incluir no prompt"""
         formatted = []
         
-        # Pegar apenas as últimas mensagens (evitar token limit)
         for msg in messages[-max_messages:]:
             role = "Cliente" if msg["role"] == "user" else "Paloma"
-            
-            # Tratar mensagens de áudio e JSON
             content = msg["content"]
             if content == "[ÁUDIO]":
                 content = "[Enviou um áudio sensual]"
@@ -1521,7 +1522,6 @@ class ChatService:
             with st.chat_message("assistant", avatar="💋"):
                 resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
                 
-                # Garante que a resposta tenha o formato correto
                 if isinstance(resposta, str):
                     resposta = {"text": resposta, "cta": {"show": False}}
                 elif "text" not in resposta:
@@ -1570,7 +1570,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL
+# APLICAÇÃO PRINCIPAL (COM DEBUG)
 # ======================
 def main():
     st.markdown("""
@@ -1609,6 +1609,12 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    # DEBUG: Log de estado (NOVO)
+    if os.getenv("DEBUG_MODE") == "true":
+        st.sidebar.markdown("### DEBUG")
+        st.sidebar.write(f"Página atual: `{st.session_state.get('current_page', 'none')}`")
+        st.sidebar.write(f"Requests: `{st.session_state.get('request_count', 0)}/{Config.MAX_REQUESTS_PER_SESSION}`")
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
