@@ -160,6 +160,7 @@ def load_persistent_data():
         if key not in st.session_state:
             st.session_state[key] = value
 
+# Função de save otimizada (NOVO)
 def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
@@ -173,7 +174,7 @@ def save_persistent_data():
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
     saved_data = db.load_state(user_id) or {}
     
-    if new_data != saved_data:
+    if new_data != saved_data:  # Só salva se houver mudanças
         db.save_state(user_id, new_data)
 
 # ======================
@@ -240,6 +241,7 @@ class Persona:
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
+        """Analisa o contexto para decidir quando mostrar CTA"""
         if len(conversation_history) < 2:
             return False
 
@@ -276,6 +278,7 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
+        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -363,8 +366,9 @@ class DatabaseService:
 # ======================
 class ApiService:
     @staticmethod
-    @lru_cache(maxsize=100)
+    @lru_cache(maxsize=100)  # Cache para 100 respostas diferentes
     def ask_gemini(prompt: str, session_id: str, conn) -> dict:
+        # Ignora cache para perguntas comerciais/contextuais importantes
         if any(word in prompt.lower() for word in ["vip", "quanto custa", "comprar", "assinar"]):
             return ApiService._call_gemini_api(prompt, session_id, conn)
         
@@ -372,6 +376,9 @@ class ApiService:
 
     @staticmethod
     def _call_gemini_api(prompt: str, session_id: str, conn) -> dict:
+        delay_time = random.uniform(3, 8)
+        time.sleep(delay_time)
+        
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
@@ -711,7 +718,7 @@ class UiService:
             
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
-                    if st.session_state.current_page != page:
+                    if st.session_state.current_page != page:  # Só rerun se mudar de página (NOVO)
                         st.session_state.current_page = page
                         st.session_state.last_action = f"page_change_to_{page}"
                         save_persistent_data()
@@ -1365,18 +1372,10 @@ class ChatService:
         return "\n".join(formatted)
 
     @staticmethod
-    def display_chat_history_partial():
-        """Mostra apenas o histórico até a última mensagem do usuário"""
+    def display_chat_history():
         chat_container = st.container()
         with chat_container:
-            # Encontra o índice da última mensagem do usuário
-            last_user_msg_index = None
-            for i, msg in enumerate(st.session_state.messages):
-                if msg["role"] == "user":
-                    last_user_msg_index = i
-            
-            # Mostra apenas até a última mensagem do usuário
-            for msg in st.session_state.messages[:last_user_msg_index+1] if last_user_msg_index is not None else []:
+            for msg in st.session_state.messages[-12:]:
                 if msg["role"] == "user":
                     with st.chat_message("user", avatar="🧑"):
                         st.markdown(f"""
@@ -1452,7 +1451,7 @@ class ChatService:
 
     @staticmethod
     def process_user_input(conn):
-        ChatService.display_chat_history_partial()
+        ChatService.display_chat_history()
         
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
@@ -1494,7 +1493,6 @@ class ChatService:
                 st.rerun()
                 return
             
-            # Adiciona mensagem do usuário
             st.session_state.messages.append({
                 "role": "user",
                 "content": cleaned_input
@@ -1509,7 +1507,6 @@ class ChatService:
             
             st.session_state.request_count += 1
             
-            # Mostra apenas a mensagem do usuário imediatamente
             with st.chat_message("user", avatar="🧑"):
                 st.markdown(f"""
                 <div style="
@@ -1522,46 +1519,35 @@ class ChatService:
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Container vazio para a resposta (será preenchido depois)
-            response_container = st.empty()
-            
-            # Mostra status effects
-            status_container = st.empty()
-            UiService.show_status_effect(status_container, "viewed")
-            UiService.show_status_effect(status_container, "typing")
-            
-            # Obtém a resposta
-            resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
-            
-            # Agora sim mostra a resposta completa com o ícone
-            with response_container.container():
-                with st.chat_message("assistant", avatar="💋"):
-                    if isinstance(resposta, str):
-                        resposta = {"text": resposta, "cta": {"show": False}}
-                    elif "text" not in resposta:
-                        resposta = {"text": str(resposta), "cta": {"show": False}}
-                    
-                    st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(45deg, #ff66b3, #ff1493);
-                        color: white;
-                        padding: 12px;
-                        border-radius: 18px 18px 18px 0;
-                        margin: 5px 0;
-                    ">
-                        {resposta["text"]}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if resposta.get("cta", {}).get("show"):
-                        if st.button(
-                            resposta["cta"].get("label", "Ver Ofertas"),
-                            key=f"chat_button_{time.time()}",
-                            use_container_width=True
-                        ):
-                            st.session_state.current_page = resposta["cta"].get("target", "offers")
-                            save_persistent_data()
-                            st.rerun()
+            with st.chat_message("assistant", avatar="💋"):
+                resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
+                
+                if isinstance(resposta, str):
+                    resposta = {"text": resposta, "cta": {"show": False}}
+                elif "text" not in resposta:
+                    resposta = {"text": str(resposta), "cta": {"show": False}}
+                
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                    color: white;
+                    padding: 12px;
+                    border-radius: 18px 18px 18px 0;
+                    margin: 5px 0;
+                ">
+                    {resposta["text"]}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if resposta.get("cta", {}).get("show"):
+                    if st.button(
+                        resposta["cta"].get("label", "Ver Ofertas"),
+                        key=f"chat_button_{time.time()}",
+                        use_container_width=True
+                    ):
+                        st.session_state.current_page = resposta["cta"].get("target", "offers")
+                        save_persistent_data()
+                        st.rerun()
             
             st.session_state.messages.append({
                 "role": "assistant",
@@ -1624,6 +1610,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
+    # DEBUG: Log de estado (NOVO)
     if os.getenv("DEBUG_MODE") == "true":
         st.sidebar.markdown("### DEBUG")
         st.sidebar.write(f"Página atual: `{st.session_state.get('current_page', 'none')}`")
