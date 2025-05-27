@@ -67,19 +67,6 @@ hide_streamlit_style = """
         margin: 0 !important;
         padding: 0 !important;
     }
-    /* NOVO: Estilos para o efeito de digitação */
-    div[data-testid="stChatMessage"]:has(+ div[data-testid="stVerticalBlock"] > div:empty) {
-        display: none !important;
-    }
-    .stChatMessageContainer {
-        min-height: 0 !important;
-    }
-    .status-effect {
-        position: fixed;
-        bottom: 60px;
-        right: 20px;
-        z-index: 100;
-    }
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -169,20 +156,9 @@ def load_persistent_data():
     db = PersistentState()
     saved_data = db.load_state(user_id) or {}
     
-    for key, default in {
-        'age_verified': False,
-        'messages': [],
-        'request_count': 0,
-        'connection_complete': False,
-        'chat_started': False,
-        'audio_sent': False,
-        'current_page': 'home',
-        'show_vip_offer': False,
-        'session_id': str(random.randint(100000, 999999)),
-        'show_typing': False  # NOVO: Estado para controlar o efeito de digitação
-    }.items():
+    for key, value in saved_data.items():
         if key not in st.session_state:
-            st.session_state[key] = saved_data.get(key, default)
+            st.session_state[key] = value
 
 def save_persistent_data():
     user_id = get_user_id()
@@ -191,8 +167,7 @@ def save_persistent_data():
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
-        'current_page', 'show_vip_offer', 'session_id',
-        'show_typing'  # NOVO: Salvar estado do efeito de digitação
+        'current_page', 'show_vip_offer', 'session_id'
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
@@ -265,7 +240,6 @@ class Persona:
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
-        """Analisa o contexto para decidir quando mostrar CTA"""
         if len(conversation_history) < 2:
             return False
 
@@ -302,7 +276,6 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
-        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -386,7 +359,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (COM CACHE)
+# SERVIÇOS DE API (COM CACHE - NOVO)
 # ======================
 class ApiService:
     @staticmethod
@@ -399,9 +372,6 @@ class ApiService:
 
     @staticmethod
     def _call_gemini_api(prompt: str, session_id: str, conn) -> dict:
-        delay_time = random.uniform(3, 8)
-        time.sleep(delay_time)
-        
         status_container = st.empty()
         UiService.show_status_effect(status_container, "viewed")
         UiService.show_status_effect(status_container, "typing")
@@ -448,7 +418,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE (COM MODIFICAÇÕES PARA O DELAY)
+# SERVIÇOS DE INTERFACE (COM OTIMIZAÇÕES)
 # ======================
 class UiService:
     @staticmethod
@@ -542,20 +512,18 @@ class UiService:
                 dots = "." * (int(elapsed * 2) % 4)
             
             container.markdown(f"""
-            <div class="status-effect">
-                <div style="
-                    color: #888;
-                    font-size: 0.8em;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    background: rgba(0,0,0,0.05);
-                    display: inline-block;
-                    margin-left: 10px;
-                    vertical-align: middle;
-                    font-style: italic;
-                ">
-                    {message}{dots}
-                </div>
+            <div style="
+                color: #888;
+                font-size: 0.8em;
+                padding: 2px 8px;
+                border-radius: 10px;
+                background: rgba(0,0,0,0.05);
+                display: inline-block;
+                margin-left: 10px;
+                vertical-align: middle;
+                font-style: italic;
+            ">
+                {message}{dots}
             </div>
             """, unsafe_allow_html=True)
             
@@ -789,18 +757,12 @@ class UiService:
     @staticmethod
     def show_gallery_page(conn):
         st.markdown("""
-        <style>
-            .preview-container {
-                background: rgba(255, 20, 147, 0.1);
-                padding: 15px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="preview-container">
+        <div style="
+            background: rgba(255, 20, 147, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        ">
             <p style="margin: 0;">Conteúdo exclusivo disponível</p>
         </div>
         """, unsafe_allow_html=True)
@@ -1347,7 +1309,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (COM AS MODIFICAÇÕES PARA O DELAY)
+# SERVIÇOS DE CHAT (COM OTIMIZAÇÕES)
 # ======================
 class ChatService:
     @staticmethod
@@ -1376,8 +1338,7 @@ class ChatService:
             'chat_started': False,
             'audio_sent': False,
             'current_page': 'home',
-            'show_vip_offer': False,
-            'show_typing': False  # NOVO: Estado para controlar o efeito de digitação
+            'show_vip_offer': False
         }
         
         for key, default in defaults.items():
@@ -1404,16 +1365,18 @@ class ChatService:
         return "\n".join(formatted)
 
     @staticmethod
-    def display_chat_history(show_all=True):
+    def display_chat_history_partial():
+        """Mostra apenas o histórico até a última mensagem do usuário"""
         chat_container = st.container()
         with chat_container:
-            # Se não for para mostrar tudo, filtrar as mensagens de status
-            messages_to_show = st.session_state.messages if show_all else [
-                msg for msg in st.session_state.messages 
-                if msg["content"] not in ["[TYPING]", "[VIEWED]"]
-            ]
+            # Encontra o índice da última mensagem do usuário
+            last_user_msg_index = None
+            for i, msg in enumerate(st.session_state.messages):
+                if msg["role"] == "user":
+                    last_user_msg_index = i
             
-            for msg in messages_to_show[-12:]:
+            # Mostra apenas até a última mensagem do usuário
+            for msg in st.session_state.messages[:last_user_msg_index+1] if last_user_msg_index is not None else []:
                 if msg["role"] == "user":
                     with st.chat_message("user", avatar="🧑"):
                         st.markdown(f"""
@@ -1489,14 +1452,26 @@ class ChatService:
 
     @staticmethod
     def process_user_input(conn):
-        # Mostrar histórico SEM as mensagens de status durante o processamento
-        ChatService.display_chat_history(show_all=not st.session_state.get("show_typing", False))
+        ChatService.display_chat_history_partial()
         
-        # Se estiver no meio do efeito de digitação, mostrar apenas o status
-        if st.session_state.get("show_typing", False):
+        if not st.session_state.get("audio_sent") and st.session_state.chat_started:
             status_container = st.empty()
-            UiService.show_status_effect(status_container, "typing")
-            return
+            UiService.show_audio_recording_effect(status_container)
+            
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": "[ÁUDIO]"
+            })
+            DatabaseService.save_message(
+                conn,
+                get_user_id(),
+                st.session_state.session_id,
+                "assistant",
+                "[ÁUDIO]"
+            )
+            st.session_state.audio_sent = True
+            save_persistent_data()
+            st.rerun()
         
         user_input = st.chat_input("Escreva sua mensagem aqui", key="chat_input")
         
@@ -1519,7 +1494,7 @@ class ChatService:
                 st.rerun()
                 return
             
-            # Adicionar mensagem do usuário
+            # Adiciona mensagem do usuário
             st.session_state.messages.append({
                 "role": "user",
                 "content": cleaned_input
@@ -1534,7 +1509,7 @@ class ChatService:
             
             st.session_state.request_count += 1
             
-            # Mostrar mensagem do usuário imediatamente
+            # Mostra apenas a mensagem do usuário imediatamente
             with st.chat_message("user", avatar="🧑"):
                 st.markdown(f"""
                 <div style="
@@ -1547,15 +1522,47 @@ class ChatService:
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Ativar estado de "digitando" e limpar a área de resposta
-            st.session_state.show_typing = True
-            save_persistent_data()
-            st.rerun()
+            # Container vazio para a resposta (será preenchido depois)
+            response_container = st.empty()
             
-            # Processar resposta (isso acontece após o rerun)
+            # Mostra status effects
+            status_container = st.empty()
+            UiService.show_status_effect(status_container, "viewed")
+            UiService.show_status_effect(status_container, "typing")
+            
+            # Obtém a resposta
             resposta = ApiService.ask_gemini(cleaned_input, st.session_state.session_id, conn)
             
-            # Adicionar resposta ao histórico
+            # Agora sim mostra a resposta completa com o ícone
+            with response_container.container():
+                with st.chat_message("assistant", avatar="💋"):
+                    if isinstance(resposta, str):
+                        resposta = {"text": resposta, "cta": {"show": False}}
+                    elif "text" not in resposta:
+                        resposta = {"text": str(resposta), "cta": {"show": False}}
+                    
+                    st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(45deg, #ff66b3, #ff1493);
+                        color: white;
+                        padding: 12px;
+                        border-radius: 18px 18px 18px 0;
+                        margin: 5px 0;
+                    ">
+                        {resposta["text"]}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if resposta.get("cta", {}).get("show"):
+                        if st.button(
+                            resposta["cta"].get("label", "Ver Ofertas"),
+                            key=f"chat_button_{time.time()}",
+                            use_container_width=True
+                        ):
+                            st.session_state.current_page = resposta["cta"].get("target", "offers")
+                            save_persistent_data()
+                            st.rerun()
+            
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": json.dumps(resposta)
@@ -1568,13 +1575,16 @@ class ChatService:
                 json.dumps(resposta)
             )
             
-            # Desativar estado de "digitando" e mostrar tudo
-            st.session_state.show_typing = False
             save_persistent_data()
-            st.rerun()
+            
+            st.markdown("""
+            <script>
+                window.scrollTo(0, document.body.scrollHeight);
+            </script>
+            """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (COM CONTROLE DO DELAY)
+# APLICAÇÃO PRINCIPAL (COM DEBUG)
 # ======================
 def main():
     st.markdown("""
@@ -1613,6 +1623,11 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    if os.getenv("DEBUG_MODE") == "true":
+        st.sidebar.markdown("### DEBUG")
+        st.sidebar.write(f"Página atual: `{st.session_state.get('current_page', 'none')}`")
+        st.sidebar.write(f"Requests: `{st.session_state.get('request_count', 0)}/{Config.MAX_REQUESTS_PER_SESSION}`")
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
