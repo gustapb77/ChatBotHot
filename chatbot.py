@@ -12,7 +12,7 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from functools import lru_cache  # Adicionado para cache
+from functools import lru_cache
 
 # ======================
 # CONFIGURAÇÃO INICIAL DO STREAMLIT
@@ -24,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configuração para evitar reruns desnecessários (NOVO)
+# Configuração para evitar reruns desnecessários
 st._config.set_option('client.caching', True)
 st._config.set_option('client.showErrorDetails', False)
 
@@ -72,10 +72,10 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES
+# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Substitua pela sua chave real
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
@@ -100,9 +100,10 @@ class Config:
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
+    CTA_COOLDOWN = 3  # Novidade: Número mínimo de mensagens entre CTAs
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (OTIMIZADA)
+# PERSISTÊNCIA DE ESTADO (ATUALIZADO)
 # ======================
 class PersistentState:
     _instance = None
@@ -160,7 +161,6 @@ def load_persistent_data():
         if key not in st.session_state:
             st.session_state[key] = value
 
-# Função de save otimizada (NOVO)
 def save_persistent_data():
     user_id = get_user_id()
     db = PersistentState()
@@ -168,17 +168,18 @@ def save_persistent_data():
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
-        'current_page', 'show_vip_offer', 'session_id'
+        'current_page', 'show_vip_offer', 'session_id',
+        'last_cta_shown', 'cta_cooldown'  # Novidade: Adicionados
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
     saved_data = db.load_state(user_id) or {}
     
-    if new_data != saved_data:  # Só salva se houver mudanças
+    if new_data != saved_data:
         db.save_state(user_id, new_data)
 
 # ======================
-# MODELOS DE DADOS (INALTERADOS)
+# MODELOS DE DADOS (ATUALIZADO)
 # ======================
 class Persona:
     PALOMA = """
@@ -192,56 +193,19 @@ class Persona:
     1. Analise o histórico da conversa para entender o contexto
     2. Só ofereça conteúdo quando o clima estiver quente
     3. Use CTAs inteligentes baseados no que o cliente está pedindo
-
-    [EXEMPLOS CONTEXTUAIS]
-    1. Quando o histórico mostra clima sexual:
-    Histórico:
-    Cliente: sua buceta é rosinha?
-    Paloma: adoro mostrar ela aberta
-    Cliente: quero ver
-    Resposta: ```json
-    {
-      "text": "to com fotos da minha buceta escorrendo quer ver?",
-      "cta": {
-        "show": true,
-        "label": "Ver Fotos Quentes",
-        "target": "offers"
-      }
-    }
-    ```
-
-    2. Quando o cliente pede algo específico:
-    Histórico:
-    Cliente: tem video vc transando?
-    Resposta: ```json
-    {
-      "text": "tenho varios videos bem gostosos vem ver",
-      "cta": {
-        "show": true,
-        "label": "Ver Vídeos Exclusivos",
-        "target": "offers"
-      }
-    }
-    ```
-
-    3. Quando o contexto não justifica CTA:
-    Histórico:
-    Cliente: oi
-    Paloma: oi gato
-    Resposta: ```json
-    {
-      "text": "eai gostoso",
-      "cta": {
-        "show": false
-      }
-    }
-    ```
+    
+    [CONTROLE DE CTAs]
+    - Não mostrar CTAs consecutivos
+    - Esperar pelo menos 3 mensagens entre CTAs
     """
 
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
         """Analisa o contexto para decidir quando mostrar CTA"""
+        if st.session_state.get('cta_cooldown', False):
+            return False
+
         if len(conversation_history) < 2:
             return False
 
@@ -322,7 +286,7 @@ class CTAEngine:
             }
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (INALTERADOS)
+# SERVIÇOS DE BANCO DE DADOS (INALTERADO)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -362,13 +326,12 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (COM CACHE - NOVO)
+# SERVIÇOS DE API (ATUALIZADO)
 # ======================
 class ApiService:
     @staticmethod
-    @lru_cache(maxsize=100)  # Cache para 100 respostas diferentes
+    @lru_cache(maxsize=100)
     def ask_gemini(prompt: str, session_id: str, conn) -> dict:
-        # Ignora cache para perguntas comerciais/contextuais importantes
         if any(word in prompt.lower() for word in ["vip", "quanto custa", "comprar", "assinar"]):
             return ApiService._call_gemini_api(prompt, session_id, conn)
         
@@ -414,6 +377,9 @@ class ApiService:
                 if resposta.get("cta", {}).get("show"):
                     if not CTAEngine.should_show_cta(st.session_state.messages):
                         resposta["cta"]["show"] = False
+                    else:
+                        st.session_state.last_cta_shown = len(st.session_state.messages)
+                        st.session_state.cta_cooldown = True
                 
                 return resposta
             
@@ -425,7 +391,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE (COM OTIMIZAÇÕES)
+# SERVIÇOS DE INTERFACE (ATUALIZADO)
 # ======================
 class UiService:
     @staticmethod
@@ -718,7 +684,7 @@ class UiService:
             
             for option, page in menu_options.items():
                 if st.button(option, use_container_width=True, key=f"menu_{page}"):
-                    if st.session_state.current_page != page:  # Só rerun se mudar de página (NOVO)
+                    if st.session_state.current_page != page:
                         st.session_state.current_page = page
                         st.session_state.last_action = f"page_change_to_{page}"
                         save_persistent_data()
@@ -1316,7 +1282,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (COM OTIMIZAÇÕES)
+# SERVIÇOS DE CHAT (ATUALIZADO)
 # ======================
 class ChatService:
     @staticmethod
@@ -1345,7 +1311,9 @@ class ChatService:
             'chat_started': False,
             'audio_sent': False,
             'current_page': 'home',
-            'show_vip_offer': False
+            'show_vip_offer': False,
+            'last_cta_shown': -1,  # Novidade
+            'cta_cooldown': False  # Novidade
         }
         
         for key, default in defaults.items():
@@ -1375,7 +1343,7 @@ class ChatService:
     def display_chat_history():
         chat_container = st.container()
         with chat_container:
-            for msg in st.session_state.messages[-12:]:
+            for idx, msg in enumerate(st.session_state.messages[-12:]):
                 if msg["role"] == "user":
                     with st.chat_message("user", avatar="🧑"):
                         st.markdown(f"""
@@ -1409,9 +1377,10 @@ class ChatService:
                                 """, unsafe_allow_html=True)
                                 
                                 if content_data.get("cta", {}).get("show"):
+                                    button_key = f"hist_cta_{hash(content_data['text'])}_{idx}"
                                     if st.button(
                                         content_data.get("cta", {}).get("label", "Ver Ofertas"),
-                                        key=f"hist_button_{msg.get('timestamp', '')}",
+                                        key=button_key,
                                         use_container_width=True
                                     ):
                                         st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
@@ -1451,6 +1420,11 @@ class ChatService:
 
     @staticmethod
     def process_user_input(conn):
+        # Resetar cooldown se passou muito tempo
+        if 'last_cta_shown' in st.session_state:
+            if len(st.session_state.messages) - st.session_state.last_cta_shown > 10:
+                st.session_state.cta_cooldown = False
+        
         ChatService.display_chat_history()
         
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
@@ -1540,9 +1514,10 @@ class ChatService:
                 """, unsafe_allow_html=True)
                 
                 if resposta.get("cta", {}).get("show"):
+                    button_key = f"chat_cta_{hash(resposta['text'])}_{int(time.time())}"
                     if st.button(
                         resposta["cta"].get("label", "Ver Ofertas"),
-                        key=f"chat_button_{time.time()}",
+                        key=button_key,
                         use_container_width=True
                     ):
                         st.session_state.current_page = resposta["cta"].get("target", "offers")
@@ -1570,7 +1545,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (COM DEBUG)
+# APLICAÇÃO PRINCIPAL (ATUALIZADA)
 # ======================
 def main():
     st.markdown("""
@@ -1609,12 +1584,6 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
-    
-    # DEBUG: Log de estado (NOVO)
-    if os.getenv("DEBUG_MODE") == "true":
-        st.sidebar.markdown("### DEBUG")
-        st.sidebar.write(f"Página atual: `{st.session_state.get('current_page', 'none')}`")
-        st.sidebar.write(f"Requests: `{st.session_state.get('request_count', 0)}/{Config.MAX_REQUESTS_PER_SESSION}`")
     
     if 'db_conn' not in st.session_state:
         st.session_state.db_conn = DatabaseService.init_db()
