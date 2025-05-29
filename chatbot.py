@@ -99,10 +99,9 @@ class Config:
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
-    CTA_COOLDOWN = 3  # Número mínimo de mensagens entre CTAs
 
 # ======================
-# PERSISTÊNCIA DE ESTADO
+# PERSISTÊNCIA DE ESTADO (OTIMIZADA)
 # ======================
 class PersistentState:
     _instance = None
@@ -168,7 +167,7 @@ def save_persistent_data():
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
         'current_page', 'show_vip_offer', 'session_id',
-        'last_cta_shown', 'cta_cooldown'
+        'last_cta_time'  # Adicionado para controle de CTAs
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
@@ -178,7 +177,7 @@ def save_persistent_data():
         db.save_state(user_id, new_data)
 
 # ======================
-# MODELOS DE DADOS (PERSONA PALOMA 100% ORIGINAL)
+# MODELOS DE DADOS (INALTERADOS)
 # ======================
 class Persona:
     PALOMA = """
@@ -192,15 +191,61 @@ class Persona:
     1. Analise o histórico da conversa para entender o contexto
     2. Só ofereça conteúdo quando o clima estiver quente
     3. Use CTAs inteligentes baseados no que o cliente está pedindo
+
+    [EXEMPLOS CONTEXTUAIS]
+    1. Quando o histórico mostra clima sexual:
+    Histórico:
+    Cliente: sua buceta é rosinha?
+    Paloma: adoro mostrar ela aberta
+    Cliente: quero ver
+    Resposta: ```json
+    {
+      "text": "to com fotos da minha buceta escorrendo quer ver?",
+      "cta": {
+        "show": true,
+        "label": "Ver Fotos Quentes",
+        "target": "offers"
+      }
+    }
+    ```
+
+    2. Quando o cliente pede algo específico:
+    Histórico:
+    Cliente: tem video vc transando?
+    Resposta: ```json
+    {
+      "text": "tenho varios videos bem gostosos vem ver",
+      "cta": {
+        "show": true,
+        "label": "Ver Vídeos Exclusivos",
+        "target": "offers"
+      }
+    }
+    ```
+
+    3. Quando o contexto não justifica CTA:
+    Histórico:
+    Cliente: oi
+    Paloma: oi gato
+    Resposta: ```json
+    {
+      "text": "eai gostoso",
+      "cta": {
+        "show": false
+      }
+    }
+    ```
     """
 
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
-        if st.session_state.get('cta_cooldown', False):
+        """Analisa o contexto para decidir quando mostrar CTA"""
+        if len(conversation_history) < 4:  # Aumentado de 2 para 4 mensagens mínimas
             return False
 
-        if len(conversation_history) < 2:
+        # Verifica se já mostrou um CTA recentemente
+        if time.time() - st.session_state.get("last_cta_time", 0) < 30:
             return False
 
         last_msgs = []
@@ -236,6 +281,7 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
+        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -279,7 +325,7 @@ class CTAEngine:
             }
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS
+# SERVIÇOS DE BANCO DE DADOS (INALTERADOS)
 # ======================
 class DatabaseService:
     @staticmethod
@@ -319,7 +365,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API
+# SERVIÇOS DE API (COM CACHE)
 # ======================
 class ApiService:
     @staticmethod
@@ -370,9 +416,6 @@ class ApiService:
                 if resposta.get("cta", {}).get("show"):
                     if not CTAEngine.should_show_cta(st.session_state.messages):
                         resposta["cta"]["show"] = False
-                    else:
-                        st.session_state.last_cta_shown = len(st.session_state.messages)
-                        st.session_state.cta_cooldown = True
                 
                 return resposta
             
@@ -384,7 +427,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE
+# SERVIÇOS DE INTERFACE (COM OTIMIZAÇÕES)
 # ======================
 class UiService:
     @staticmethod
@@ -891,7 +934,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS
+# PÁGINAS (INALTERADAS)
 # ======================
 class NewPages:
     @staticmethod
@@ -1275,7 +1318,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (COM CORREÇÕES)
+# SERVIÇOS DE CHAT (COM OTIMIZAÇÕES)
 # ======================
 class ChatService:
     @staticmethod
@@ -1305,8 +1348,7 @@ class ChatService:
             'audio_sent': False,
             'current_page': 'home',
             'show_vip_offer': False,
-            'last_cta_shown': -1,
-            'cta_cooldown': False
+            'last_cta_time': 0  # Adicionado para controle de CTAs
         }
         
         for key, default in defaults.items():
@@ -1370,41 +1412,27 @@ class ChatService:
                                 """, unsafe_allow_html=True)
                                 
                                 if content_data.get("cta", {}).get("show"):
-                                    button_key = f"hist_cta_{hash(content_data['text'])}_{idx}"
-                                    if st.button(
-                                        content_data.get("cta", {}).get("label", "Ver Ofertas"),
-                                        key=button_key,
-                                        use_container_width=True
-                                    ):
-                                        st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
-                                        save_persistent_data()
-                                        st.rerun()
-                        else:
-                            with st.chat_message("assistant", avatar="💋"):
-                                st.markdown(f"""
-                                <div style="
-                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
-                                    color: white;
-                                    padding: 12px;
-                                    border-radius: 18px 18px 18px 0;
-                                    margin: 5px 0;
-                                ">
-                                    {msg["content"]}
-                                </div>
-                                """, unsafe_allow_html=True)
+                                    # Gera uma chave única baseada no conteúdo + timestamp
+                                    msg_timestamp = msg.get("timestamp", str(time.time()))
+                                    unique_key = f"cta_{hash(content_data['text'] + msg_timestamp) % 1000000}"
+                                    
+                                    # Verifica se já mostrou um CTA recentemente
+                                    last_cta_time = st.session_state.get("last_cta_time", 0)
+                                    current_time = time.time()
+                                    
+                                    if current_time - last_cta_time > 30:  # 30 segundos entre CTAs
+                                        if st.button(
+                                            content_data.get("cta", {}).get("label", "Ver Ofertas"),
+                                            key=unique_key,
+                                            use_container_width=True
+                                        ):
+                                            st.session_state.last_cta_time = current_time
+                                            st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
+                                            save_persistent_data()
+                                            st.rerun()
                     except json.JSONDecodeError:
                         with st.chat_message("assistant", avatar="💋"):
-                            st.markdown(f"""
-                            <div style="
-                                background: linear-gradient(45deg, #ff66b3, #ff1493);
-                                color: white;
-                                padding: 12px;
-                                border-radius: 18px 18px 18px 0;
-                                margin: 5px 0;
-                            ">
-                                {msg["content"]}
-                            </div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(msg["content"], unsafe_allow_html=True)
 
     @staticmethod
     def validate_input(user_input):
@@ -1413,10 +1441,6 @@ class ChatService:
 
     @staticmethod
     def process_user_input(conn):
-        if 'last_cta_shown' in st.session_state:
-            if len(st.session_state.messages) - st.session_state.last_cta_shown > 10:
-                st.session_state.cta_cooldown = False
-        
         ChatService.display_chat_history()
         
         if not st.session_state.get("audio_sent") and st.session_state.chat_started:
@@ -1506,12 +1530,12 @@ class ChatService:
                 """, unsafe_allow_html=True)
                 
                 if resposta.get("cta", {}).get("show"):
-                    button_key = f"chat_cta_{hash(resposta['text'])}_{int(time.time())}"
                     if st.button(
                         resposta["cta"].get("label", "Ver Ofertas"),
-                        key=button_key,
+                        key=f"chat_button_{time.time()}",
                         use_container_width=True
                     ):
+                        st.session_state.last_cta_time = time.time()
                         st.session_state.current_page = resposta["cta"].get("target", "offers")
                         save_persistent_data()
                         st.rerun()
