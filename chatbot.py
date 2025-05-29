@@ -12,8 +12,7 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from functools import lru_cache  # Adicionado para cache
-import hashlib  # Adicionado para gerar chaves únicas
+from functools import lru_cache
 
 # ======================
 # CONFIGURAÇÃO INICIAL DO STREAMLIT
@@ -25,7 +24,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configuração para evitar reruns desnecessários (NOVO)
 st._config.set_option('client.caching', True)
 st._config.set_option('client.showErrorDetails', False)
 
@@ -76,7 +74,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
-    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"  # Substitua pela sua chave real
+    API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
     API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     VIP_LINK = "https://exemplo.com/vip"
     CHECKOUT_START = "https://checkout.exemplo.com/start"
@@ -103,7 +101,7 @@ class Config:
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (OTIMIZADA)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -178,7 +176,7 @@ def save_persistent_data():
         db.save_state(user_id, new_data)
 
 # ======================
-# MODELOS DE DADOS (INALTERADOS)
+# MODELOS DE DADOS
 # ======================
 class Persona:
     PALOMA = """
@@ -241,17 +239,6 @@ class Persona:
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
-        """Analisa o contexto para decidir quando mostrar CTA"""
-        # Verifica se já existe um CTA recente
-        for msg in reversed(conversation_history[-3:]):
-            if msg["role"] == "assistant" and msg["content"] != "[ÁUDIO]":
-                try:
-                    content = json.loads(msg["content"])
-                    if content.get("cta", {}).get("show"):
-                        return False
-                except:
-                    pass
-        
         if len(conversation_history) < 2:
             return False
 
@@ -288,7 +275,6 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
-        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -332,7 +318,7 @@ class CTAEngine:
             }
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (INALTERADOS)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -372,7 +358,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (COM CACHE)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -434,7 +420,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE (COM OTIMIZAÇÕES)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
@@ -941,7 +927,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS (INALTERADAS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -1325,7 +1311,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (COM OTIMIZAÇÕES)
+# SERVIÇOS DE CHAT
 # ======================
 class ChatService:
     @staticmethod
@@ -1422,7 +1408,8 @@ class ChatService:
                                 if content_data.get("cta", {}).get("show"):
                                     last_cta = {
                                         "data": content_data,
-                                        "idx": idx
+                                        "idx": idx,
+                                        "timestamp": str(time.time())
                                     }
                         else:
                             with st.chat_message("assistant", avatar="💋"):
@@ -1434,8 +1421,8 @@ class ChatService:
             # Renderiza apenas o último CTA válido
             if last_cta:
                 content_data = last_cta["data"]
-                # Gera uma chave única baseada no conteúdo e índice
-                cta_key = f"cta_btn_{hash(frozenset(content_data.items()))}_{last_cta['idx']}"
+                # Gera uma chave única simples baseada no timestamp e índice
+                cta_key = f"cta_btn_{last_cta['idx']}_{hash(last_cta['timestamp'])}"
                 
                 if st.button(
                     content_data.get("cta", {}).get("label", "Ver Ofertas"),
@@ -1528,22 +1515,6 @@ class ChatService:
                     resposta = {"text": resposta, "cta": {"show": False}}
                 elif "text" not in resposta:
                     resposta = {"text": str(resposta), "cta": {"show": False}}
-                
-                # Verifica se já existe um CTA recente
-                if resposta.get("cta", {}).get("show"):
-                    last_assistant_msg = next(
-                        (msg for msg in reversed(st.session_state.messages) 
-                        if msg["role"] == "assistant" and msg["content"] != "[ÁUDIO]"),
-                        None
-                    )
-                    
-                    if last_assistant_msg:
-                        try:
-                            last_content = json.loads(last_assistant_msg["content"])
-                            if last_content.get("cta", {}).get("show"):
-                                resposta["cta"]["show"] = False  # Não mostra CTA se o anterior já tinha
-                        except:
-                            pass
                 
                 st.markdown(f"""
                 <div style="
