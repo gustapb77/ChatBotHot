@@ -24,7 +24,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configuração para evitar reruns desnecessários
 st._config.set_option('client.caching', True)
 st._config.set_option('client.showErrorDetails', False)
 
@@ -72,7 +71,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ======================
-# CONSTANTES E CONFIGURAÇÕES (ATUALIZADO)
+# CONSTANTES E CONFIGURAÇÕES
 # ======================
 class Config:
     API_KEY = "AIzaSyDTaYm2KHHnVPdWy4l5pEaGPM7QR0g3IPc"
@@ -100,10 +99,10 @@ class Config:
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
-    CTA_COOLDOWN = 3  # Novidade: Número mínimo de mensagens entre CTAs
+    CTA_COOLDOWN = 3  # Número mínimo de mensagens entre CTAs
 
 # ======================
-# PERSISTÊNCIA DE ESTADO (ATUALIZADO)
+# PERSISTÊNCIA DE ESTADO
 # ======================
 class PersistentState:
     _instance = None
@@ -169,7 +168,7 @@ def save_persistent_data():
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
         'current_page', 'show_vip_offer', 'session_id',
-        'last_cta_shown', 'cta_cooldown'  # Novidade: Adicionados
+        'last_cta_shown', 'cta_cooldown'
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
@@ -179,7 +178,7 @@ def save_persistent_data():
         db.save_state(user_id, new_data)
 
 # ======================
-# MODELOS DE DADOS (ATUALIZADO)
+# MODELOS DE DADOS (PERSONA PALOMA 100% ORIGINAL)
 # ======================
 class Persona:
     PALOMA = """
@@ -193,16 +192,11 @@ class Persona:
     1. Analise o histórico da conversa para entender o contexto
     2. Só ofereça conteúdo quando o clima estiver quente
     3. Use CTAs inteligentes baseados no que o cliente está pedindo
-    
-    [CONTROLE DE CTAs]
-    - Não mostrar CTAs consecutivos
-    - Esperar pelo menos 3 mensagens entre CTAs
     """
 
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
-        """Analisa o contexto para decidir quando mostrar CTA"""
         if st.session_state.get('cta_cooldown', False):
             return False
 
@@ -242,7 +236,6 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
-        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -286,7 +279,7 @@ class CTAEngine:
             }
 
 # ======================
-# SERVIÇOS DE BANCO DE DADOS (INALTERADO)
+# SERVIÇOS DE BANCO DE DADOS
 # ======================
 class DatabaseService:
     @staticmethod
@@ -326,7 +319,7 @@ class DatabaseService:
         return [{"role": row[0], "content": row[1]} for row in c.fetchall()]
 
 # ======================
-# SERVIÇOS DE API (ATUALIZADO)
+# SERVIÇOS DE API
 # ======================
 class ApiService:
     @staticmethod
@@ -391,7 +384,7 @@ class ApiService:
             return {"text": "Vamos continuar isso mais tarde...", "cta": {"show": False}}
 
 # ======================
-# SERVIÇOS DE INTERFACE (ATUALIZADO)
+# SERVIÇOS DE INTERFACE
 # ======================
 class UiService:
     @staticmethod
@@ -898,7 +891,7 @@ class UiService:
         """, unsafe_allow_html=True)
 
 # ======================
-# PÁGINAS (INALTERADAS)
+# PÁGINAS
 # ======================
 class NewPages:
     @staticmethod
@@ -1282,7 +1275,7 @@ class NewPages:
             st.rerun()
 
 # ======================
-# SERVIÇOS DE CHAT (ATUALIZADO)
+# SERVIÇOS DE CHAT (COM CORREÇÕES)
 # ======================
 class ChatService:
     @staticmethod
@@ -1312,8 +1305,8 @@ class ChatService:
             'audio_sent': False,
             'current_page': 'home',
             'show_vip_offer': False,
-            'last_cta_shown': -1,  # Novidade
-            'cta_cooldown': False  # Novidade
+            'last_cta_shown': -1,
+            'cta_cooldown': False
         }
         
         for key, default in defaults.items():
@@ -1420,7 +1413,6 @@ class ChatService:
 
     @staticmethod
     def process_user_input(conn):
-        # Resetar cooldown se passou muito tempo
         if 'last_cta_shown' in st.session_state:
             if len(st.session_state.messages) - st.session_state.last_cta_shown > 10:
                 st.session_state.cta_cooldown = False
@@ -1545,7 +1537,7 @@ class ChatService:
             """, unsafe_allow_html=True)
 
 # ======================
-# APLICAÇÃO PRINCIPAL (ATUALIZADA)
+# APLICAÇÃO PRINCIPAL
 # ======================
 def main():
     st.markdown("""
