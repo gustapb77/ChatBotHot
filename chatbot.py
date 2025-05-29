@@ -166,7 +166,8 @@ def save_persistent_data():
     persistent_keys = [
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
-        'current_page', 'show_vip_offer', 'session_id'
+        'current_page', 'show_vip_offer', 'session_id',
+        'last_cta_time'  # Novo campo adicionado
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
@@ -239,8 +240,15 @@ class Persona:
 class CTAEngine:
     @staticmethod
     def should_show_cta(conversation_history: list) -> bool:
+        """Analisa o contexto para decidir quando mostrar CTA"""
         if len(conversation_history) < 2:
             return False
+
+        # Não mostrar CTA se já teve um recentemente
+        if 'last_cta_time' in st.session_state:
+            elapsed = time.time() - st.session_state.last_cta_time
+            if elapsed < 120:  # 2 minutos de intervalo entre CTAs
+                return False
 
         last_msgs = []
         for msg in conversation_history[-5:]:
@@ -275,6 +283,7 @@ class CTAEngine:
 
     @staticmethod
     def generate_response(user_input: str) -> dict:
+        """Gera resposta com CTA contextual (fallback)"""
         user_input = user_input.lower()
         
         if any(p in user_input for p in ["foto", "fotos", "buceta", "peito", "bunda"]):
@@ -409,6 +418,8 @@ class ApiService:
                 if resposta.get("cta", {}).get("show"):
                     if not CTAEngine.should_show_cta(st.session_state.messages):
                         resposta["cta"]["show"] = False
+                    else:
+                        st.session_state.last_cta_time = time.time()  # Registrar quando CTA foi mostrado
                 
                 return resposta
             
@@ -1089,7 +1100,6 @@ class NewPages:
                 padding: 5px 10px;
                 border-radius: 5px;
                 font-weight: bold;
-            }
         </style>
         """, unsafe_allow_html=True)
 
@@ -1340,7 +1350,8 @@ class ChatService:
             'chat_started': False,
             'audio_sent': False,
             'current_page': 'home',
-            'show_vip_offer': False
+            'show_vip_offer': False,
+            'last_cta_time': 0  # Novo campo adicionado
         }
         
         for key, default in defaults.items():
@@ -1369,8 +1380,6 @@ class ChatService:
     @staticmethod
     def display_chat_history():
         chat_container = st.container()
-        last_cta = None
-        
         with chat_container:
             for idx, msg in enumerate(st.session_state.messages[-12:]):
                 if msg["role"] == "user":
@@ -1405,33 +1414,42 @@ class ChatService:
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
-                                if content_data.get("cta", {}).get("show"):
-                                    last_cta = {
-                                        "data": content_data,
-                                        "idx": idx,
-                                        "timestamp": str(time.time())
-                                    }
+                                # Mostrar botão apenas na última mensagem
+                                if content_data.get("cta", {}).get("show") and idx == len(st.session_state.messages[-12:]) - 1:
+                                    if st.button(
+                                        content_data.get("cta", {}).get("label", "Ver Ofertas"),
+                                        key=f"cta_button_{hash(msg['content'])}",  # Chave única baseada no conteúdo
+                                        use_container_width=True
+                                    ):
+                                        st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
+                                        save_persistent_data()
+                                        st.rerun()
                         else:
                             with st.chat_message("assistant", avatar="💋"):
-                                st.markdown(msg["content"], unsafe_allow_html=True)
+                                st.markdown(f"""
+                                <div style="
+                                    background: linear-gradient(45deg, #ff66b3, #ff1493);
+                                    color: white;
+                                    padding: 12px;
+                                    border-radius: 18px 18px 18px 0;
+                                    margin: 5px 0;
+                                ">
+                                    {msg["content"]}
+                                </div>
+                                """, unsafe_allow_html=True)
                     except json.JSONDecodeError:
                         with st.chat_message("assistant", avatar="💋"):
-                            st.markdown(msg["content"], unsafe_allow_html=True)
-        
-            # Renderiza apenas o último CTA válido
-            if last_cta:
-                content_data = last_cta["data"]
-                # Gera uma chave única simples baseada no timestamp e índice
-                cta_key = f"cta_btn_{last_cta['idx']}_{hash(last_cta['timestamp'])}"
-                
-                if st.button(
-                    content_data.get("cta", {}).get("label", "Ver Ofertas"),
-                    key=cta_key,
-                    use_container_width=True
-                ):
-                    st.session_state.current_page = content_data.get("cta", {}).get("target", "offers")
-                    save_persistent_data()
-                    st.rerun()
+                            st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(45deg, #ff66b3, #ff1493);
+                                color: white;
+                                padding: 12px;
+                                border-radius: 18px 18px 18px 0;
+                                margin: 5px 0;
+                            ">
+                                {msg["content"]}
+                            </div>
+                            """, unsafe_allow_html=True)
 
     @staticmethod
     def validate_input(user_input):
