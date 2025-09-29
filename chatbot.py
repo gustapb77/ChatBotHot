@@ -1659,7 +1659,12 @@ class ChatService:
                 if resposta.get("cta", {}).get("show"):
                     if st.button(
                         resposta["cta"].get("label", "Ver Ofertas"),
-                        key=f"chat_button            st.rerun()
+                        key=f"chat_button_{time.time()}",
+                        use_container_width=True
+                    ):
+                        st.session_state.current_page = resposta["cta"].get("target", "offers")
+                        save_persistent_data()
+                        st.rerun()
 
         if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
             last_user_message = st.session_state.messages[-1]["content"]
