@@ -99,7 +99,6 @@ class Config:
         "https://i.ibb.co/F4CkkYTL/Save-ClipApp-461241348-1219420546053727-2357827070610318448-n.jpg"
     ]
     LOGO_URL = "https://i.ibb.co/LX7x3tcB/Logo-Golden-Pepper-Letreiro-1.png"
-    VIDEO_CALL_URL = "https://www.exemplo.com/video_para_chamada.mp4" # Adicione o URL do seu vídeo aqui
 
 # ======================
 # PERSISTÊNCIA DE ESTADO
@@ -168,7 +167,7 @@ def save_persistent_data():
         'age_verified', 'messages', 'request_count',
         'connection_complete', 'chat_started', 'audio_sent',
         'current_page', 'show_vip_offer', 'session_id',
-        'last_cta_time', 'context_score' # Novo campo adicionado
+        'last_cta_time'  # Novo campo adicionado
     ]
     
     new_data = {key: st.session_state.get(key) for key in persistent_keys if key in st.session_state}
@@ -1321,114 +1320,6 @@ class NewPages:
             save_persistent_data()
             st.rerun()
 
-    @staticmethod
-    def show_video_call_page():
-        st.markdown("""
-        <style>
-            .video-call-container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 80vh;
-                background: linear-gradient(135deg, #1e0033, #3c0066);
-                border-radius: 15px;
-                padding: 20px;
-                color: white;
-                text-align: center;
-            }
-            .video-frame {
-                width: 100%;
-                max-width: 800px;
-                aspect-ratio: 16 / 9;
-                border-radius: 10px;
-                overflow: hidden;
-                margin-bottom: 20px;
-                border: 2px solid #ff66b3;
-            }
-            .video-frame video {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-            .call-controls {
-                display: flex;
-                gap: 20px;
-                margin-top: 20px;
-            }
-            .control-button {
-                background: rgba(255, 20, 147, 0.7);
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 60px;
-                height: 60px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.5em;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-            .control-button:hover {
-                background: #ff1493;
-                transform: scale(1.1);
-            }
-            .end-call-button {
-                background: #dc3545;
-            }
-            .end-call-button:hover {
-                background: #c82333;
-            }
-            .chat-overlay {
-                background: rgba(0, 0, 0, 0.7);
-                border-radius: 10px;
-                padding: 10px;
-                max-height: 150px;
-                overflow-y: auto;
-                width: 100%;
-                max-width: 300px;
-                margin-top: 20px;
-                text-align: left;
-            }
-            .chat-message {
-                margin-bottom: 5px;
-                font-size: 0.9em;
-            }
-            .chat-message.paloma {
-                color: #ff66b3;
-            }
-            .chat-message.user {
-                color: #add8e6;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="video-call-container">
-            <h2 style="color: #ff66b3;">Chamada de Vídeo com Paloma</h2>
-            <div class="video-frame">
-                <video src="{video_url}" autoplay loop muted playsinline></video>
-            </div>
-            <div class="call-controls">
-                <button class="control-button"><i class="fas fa-microphone"></i></button>
-                <button class="control-button"><i class="fas fa-video"></i></button>
-                <button class="control-button end-call-button" onclick="window.parent.document.querySelector('[data-testid="stButton"].end-call-streamlit-button button').click();"><i class="fas fa-phone-slash"></i></button>
-            </div>
-            <div class="chat-overlay">
-                <div class="chat-message paloma">Paloma: Oi, gatinho! Que bom te ver!</div>
-                <div class="chat-message user">Você: Oi, Paloma!</div>
-                <div class="chat-message paloma">Paloma: Estou adorando essa chamada com você...</div>
-            </div>
-        </div>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-        """.format(video_url=Config.VIDEO_CALL_URL), unsafe_allow_html=True)
-
-        if st.button("Encerrar Chamada", key="end_call_streamlit_button", type="secondary"):
-            st.session_state.current_page = "chat"
-            save_persistent_data()
-            st.rerun()
-
 # ======================
 # SERVIÇOS DE CHAT
 # ======================
@@ -1460,8 +1351,7 @@ class ChatService:
             'audio_sent': False,
             'current_page': 'home',
             'show_vip_offer': False,
-            'last_cta_time': 0,  # Novo campo adicionado
-            'context_score': 0 # Novo campo adicionado
+            'last_cta_time': 0  # Novo campo adicionado
         }
         
         for key, default in defaults.items():
@@ -1665,29 +1555,7 @@ class ChatService:
                         st.session_state.current_page = resposta["cta"].get("target", "offers")
                         save_persistent_data()
                         st.rerun()
-
-        if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-            last_user_message = st.session_state.messages[-1]["content"]
             
-            # Sistema de Pontuação de Contexto
-            hot_words = ["videochamada", "chamada de vídeo", "ligar", "falar com você"]
-            if any(word in last_user_message.lower() for word in hot_words):
-                st.session_state.context_score += 2
-            elif CTAEngine.should_show_cta(st.session_state.messages):
-                st.session_state.context_score += 1
-
-            # Decisão de CTA vs Chamada de Vídeo
-            if st.session_state.context_score >= 3:
-                if random.choice([True, False]):
-                    st.session_state.current_page = "video_call"
-                    st.session_state.context_score = 0 # Resetar o score
-                    save_persistent_data()
-                    st.rerun()
-                else:
-                    resposta = ApiService.ask_gemini(last_user_message, st.session_state.session_id, conn)
-            else:
-                resposta = ApiService.ask_gemini(last_user_message, st.session_state.session_id, conn)
-
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": json.dumps(resposta)
@@ -1707,7 +1575,8 @@ class ChatService:
                 window.scrollTo(0, document.body.scrollHeight);
             </script>
             """, unsafe_allow_html=True)
-=======
+
+# ======================
 # APLICAÇÃO PRINCIPAL
 # ======================
 def main():
@@ -1811,3 +1680,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
